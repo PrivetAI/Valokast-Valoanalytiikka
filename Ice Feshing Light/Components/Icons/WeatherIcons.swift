@@ -1,208 +1,112 @@
 import SwiftUI
 
-// MARK: - Sun Icon (Clear Weather)
-struct SunIcon: View {
-    var size: CGFloat = 24
-    var color: Color = AppColors.sunny
-    
-    var body: some View {
-        ZStack {
-            // Rays
-            ForEach(0..<8) { i in
-                RoundedRectangle(cornerRadius: 1)
-                    .fill(color)
-                    .frame(width: size * 0.08, height: size * 0.2)
-                    .offset(y: -size * 0.35)
-                    .rotationEffect(.degrees(Double(i) * 45))
-            }
-            
-            // Center circle
-            Circle()
-                .fill(color)
-                .frame(width: size * 0.5, height: size * 0.5)
-        }
-        .frame(width: size, height: size)
-    }
-}
+// MARK: - Custom Light-Related Shape Icons (no SF Symbols, no emoji)
 
-// MARK: - Cloud Shape
-struct CloudShape: Shape {
+struct SunShape: Shape {
     func path(in rect: CGRect) -> Path {
-        var path = Path()
-        let w = rect.width
-        let h = rect.height
-        
-        // Main cloud body using circles
-        path.addEllipse(in: CGRect(x: w * 0.1, y: h * 0.4, width: w * 0.35, height: h * 0.5))
-        path.addEllipse(in: CGRect(x: w * 0.3, y: h * 0.2, width: w * 0.4, height: h * 0.55))
-        path.addEllipse(in: CGRect(x: w * 0.55, y: h * 0.35, width: w * 0.35, height: h * 0.5))
-        
-        return path
-    }
-}
-
-// MARK: - Cloudy Icon (Partial Clouds)
-struct CloudyIcon: View {
-    var size: CGFloat = 24
-    var sunColor: Color = AppColors.sunny
-    var cloudColor: Color = AppColors.cloudy
-    
-    var body: some View {
-        ZStack {
-            // Sun behind
-            SunIcon(size: size * 0.6, color: sunColor)
-                .offset(x: size * 0.15, y: -size * 0.15)
-            
-            // Cloud in front
-            CloudShape()
-                .fill(cloudColor)
-                .frame(width: size * 0.8, height: size * 0.5)
-                .offset(x: -size * 0.05, y: size * 0.15)
+        var p = Path()
+        let c = CGPoint(x: rect.midX, y: rect.midY)
+        let r = min(rect.width, rect.height) * 0.25
+        p.addEllipse(in: CGRect(x: c.x - r, y: c.y - r, width: r * 2, height: r * 2))
+        // Rays
+        let rayLen = min(rect.width, rect.height) * 0.18
+        let rayStart = r * 1.3
+        for i in 0..<8 {
+            let angle = CGFloat(i) * .pi / 4
+            let sx = c.x + cos(angle) * rayStart
+            let sy = c.y + sin(angle) * rayStart
+            let ex = c.x + cos(angle) * (rayStart + rayLen)
+            let ey = c.y + sin(angle) * (rayStart + rayLen)
+            p.move(to: CGPoint(x: sx, y: sy))
+            p.addLine(to: CGPoint(x: ex, y: ey))
         }
-        .frame(width: size, height: size)
+        return p
     }
 }
 
-// MARK: - Overcast Icon (Full Clouds)
-struct OvercastIcon: View {
-    var size: CGFloat = 24
-    var color: Color = AppColors.overcast
-    
-    var body: some View {
-        ZStack {
-            // Back cloud
-            CloudShape()
-                .fill(color.opacity(0.6))
-                .frame(width: size * 0.7, height: size * 0.45)
-                .offset(x: size * 0.1, y: -size * 0.1)
-            
-            // Front cloud
-            CloudShape()
-                .fill(color)
-                .frame(width: size * 0.85, height: size * 0.55)
-                .offset(y: size * 0.1)
-        }
-        .frame(width: size, height: size)
+struct MoonShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        var p = Path()
+        let c = CGPoint(x: rect.midX, y: rect.midY)
+        let r = min(rect.width, rect.height) * 0.38
+        p.addArc(center: c, radius: r, startAngle: .degrees(-90), endAngle: .degrees(90), clockwise: false)
+        let offset = r * 0.6
+        p.addArc(center: CGPoint(x: c.x + offset, y: c.y), radius: r * 0.85, startAngle: .degrees(90), endAngle: .degrees(-90), clockwise: true)
+        p.closeSubpath()
+        return p
     }
 }
 
-// MARK: - Snowflake Shape
+struct LightBeamShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        var p = Path()
+        let topCenter = CGPoint(x: rect.midX, y: rect.minY)
+        let spread = rect.width * 0.4
+        p.move(to: topCenter)
+        p.addLine(to: CGPoint(x: rect.midX - spread, y: rect.maxY))
+        p.addLine(to: CGPoint(x: rect.midX + spread, y: rect.maxY))
+        p.closeSubpath()
+        return p
+    }
+}
+
 struct SnowflakeShape: Shape {
     func path(in rect: CGRect) -> Path {
-        var path = Path()
-        let center = CGPoint(x: rect.midX, y: rect.midY)
-        let radius = min(rect.width, rect.height) / 2
-        
+        var p = Path()
+        let c = CGPoint(x: rect.midX, y: rect.midY)
+        let r = min(rect.width, rect.height) * 0.4
         for i in 0..<6 {
-            let angle = Double(i) * 60 * .pi / 180
-            let endX = center.x + radius * CGFloat(cos(angle))
-            let endY = center.y + radius * CGFloat(sin(angle))
-            
-            path.move(to: center)
-            path.addLine(to: CGPoint(x: endX, y: endY))
-            
+            let angle = CGFloat(i) * .pi / 3
+            p.move(to: c)
+            let end = CGPoint(x: c.x + cos(angle) * r, y: c.y + sin(angle) * r)
+            p.addLine(to: end)
             // Small branches
-            let branchStart = CGPoint(
-                x: center.x + radius * 0.6 * CGFloat(cos(angle)),
-                y: center.y + radius * 0.6 * CGFloat(sin(angle))
-            )
-            
-            let branchAngle1 = angle + 0.5
-            let branchAngle2 = angle - 0.5
-            
-            path.move(to: branchStart)
-            path.addLine(to: CGPoint(
-                x: branchStart.x + radius * 0.25 * CGFloat(cos(branchAngle1)),
-                y: branchStart.y + radius * 0.25 * CGFloat(sin(branchAngle1))
-            ))
-            
-            path.move(to: branchStart)
-            path.addLine(to: CGPoint(
-                x: branchStart.x + radius * 0.25 * CGFloat(cos(branchAngle2)),
-                y: branchStart.y + radius * 0.25 * CGFloat(sin(branchAngle2))
-            ))
+            let mid = CGPoint(x: c.x + cos(angle) * r * 0.6, y: c.y + sin(angle) * r * 0.6)
+            let branchLen = r * 0.3
+            let a1 = angle + .pi / 6
+            let a2 = angle - .pi / 6
+            p.move(to: mid)
+            p.addLine(to: CGPoint(x: mid.x + cos(a1) * branchLen, y: mid.y + sin(a1) * branchLen))
+            p.move(to: mid)
+            p.addLine(to: CGPoint(x: mid.x + cos(a2) * branchLen, y: mid.y + sin(a2) * branchLen))
         }
-        
-        return path
+        return p
     }
 }
 
-// MARK: - Snowing Icon
-struct SnowingIcon: View {
-    var size: CGFloat = 24
-    var cloudColor: Color = AppColors.snowing
-    var snowColor: Color = Color.white
-    
-    var body: some View {
-        ZStack {
-            // Cloud
-            CloudShape()
-                .fill(cloudColor)
-                .frame(width: size * 0.85, height: size * 0.45)
-                .offset(y: -size * 0.15)
-            
-            // Snowflakes
-            HStack(spacing: size * 0.15) {
-                SnowflakeShape()
-                    .stroke(snowColor, lineWidth: 1.2)
-                    .frame(width: size * 0.2, height: size * 0.2)
-                
-                SnowflakeShape()
-                    .stroke(snowColor, lineWidth: 1.2)
-                    .frame(width: size * 0.15, height: size * 0.15)
-                    .offset(y: size * 0.08)
-                
-                SnowflakeShape()
-                    .stroke(snowColor, lineWidth: 1.2)
-                    .frame(width: size * 0.2, height: size * 0.2)
-            }
-            .offset(y: size * 0.25)
+struct WaterWaveShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        var p = Path()
+        let midY = rect.midY
+        let amp = rect.height * 0.2
+        p.move(to: CGPoint(x: rect.minX, y: midY))
+        let segments = 4
+        let segW = rect.width / CGFloat(segments)
+        for i in 0..<segments {
+            let x1 = rect.minX + CGFloat(i) * segW + segW * 0.5
+            let x2 = rect.minX + CGFloat(i + 1) * segW
+            let cp1y = midY + (i % 2 == 0 ? -amp : amp)
+            let cp2y = midY + (i % 2 == 0 ? -amp : amp)
+            p.addCurve(to: CGPoint(x: x2, y: midY),
+                       control1: CGPoint(x: x1, y: cp1y),
+                       control2: CGPoint(x: x1, y: cp2y))
         }
-        .frame(width: size, height: size)
+        return p
     }
 }
 
-// MARK: - Weather Icon View
-struct WeatherIcon: View {
-    let condition: WeatherCondition
-    var size: CGFloat = 24
-    
-    var body: some View {
-        switch condition {
-        case .clear:
-            SunIcon(size: size)
-        case .cloudy:
-            CloudyIcon(size: size)
-        case .overcast:
-            OvercastIcon(size: size)
-        case .snowing:
-            SnowingIcon(size: size)
+struct IceCrystalShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        var p = Path()
+        let c = CGPoint(x: rect.midX, y: rect.midY)
+        let r = min(rect.width, rect.height) * 0.42
+        // Hexagon
+        for i in 0..<6 {
+            let angle = CGFloat(i) * .pi / 3 - .pi / 6
+            let pt = CGPoint(x: c.x + cos(angle) * r, y: c.y + sin(angle) * r)
+            if i == 0 { p.move(to: pt) } else { p.addLine(to: pt) }
         }
-    }
-}
-
-// MARK: - Previews
-struct WeatherIcons_Previews: PreviewProvider {
-    static var previews: some View {
-        HStack(spacing: 20) {
-            VStack {
-                SunIcon(size: 48)
-                Text("Clear")
-            }
-            VStack {
-                CloudyIcon(size: 48)
-                Text("Cloudy")
-            }
-            VStack {
-                OvercastIcon(size: 48)
-                Text("Overcast")
-            }
-            VStack {
-                SnowingIcon(size: 48)
-                Text("Snowing")
-            }
-        }
-        .padding()
-        .background(AppColors.background)
+        p.closeSubpath()
+        return p
     }
 }

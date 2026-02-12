@@ -1,323 +1,276 @@
 import SwiftUI
 
-struct ComparisonView: View {
+// MARK: - Light Journal View
+
+struct LightJournalView: View {
     @ObservedObject var dataService: DataService
-    
-    @State private var condition1Weather: WeatherCondition = .clear
-    @State private var condition1Time: TimeOfDay = .morning
-    @State private var condition2Weather: WeatherCondition = .overcast
-    @State private var condition2Time: TimeOfDay = .morning
-    
-    let onNavigateToSettings: () -> Void
-    let onNavigateBack: () -> Void
-    
-    var body: some View {
-        ScrollView {
-            VStack(spacing: AppSpacing.lg) {
-                // Header
-                HStack {
-                    Button(action: onNavigateBack) {
-                        BackIcon(size: 24, color: AppColors.primary)
-                    }
-                    
-                    Spacer()
-                    
-                    Text("Compare")
-                        .font(AppTypography.title)
-                        .foregroundColor(AppColors.textPrimary)
-                    
-                    Spacer()
-                    
-                    Button(action: onNavigateToSettings) {
-                        SettingsIcon(size: 24, color: AppColors.primary)
-                    }
-                }
-                .padding(.horizontal, AppSpacing.md)
-                
-                // Condition 1 selector
-                ConditionSelector(
-                    title: "Condition A",
-                    weather: $condition1Weather,
-                    time: $condition1Time,
-                    color: AppColors.primary
-                )
-                .padding(.horizontal, AppSpacing.md)
-                
-                // VS divider
-                HStack {
-                    Rectangle()
-                        .fill(AppColors.surface)
-                        .frame(height: 2)
-                    
-                    Text("VS")
-                        .font(AppTypography.headline)
-                        .foregroundColor(AppColors.textSecondary)
-                        .padding(.horizontal, AppSpacing.md)
-                    
-                    Rectangle()
-                        .fill(AppColors.surface)
-                        .frame(height: 2)
-                }
-                .padding(.horizontal, AppSpacing.lg)
-                
-                // Condition 2 selector
-                ConditionSelector(
-                    title: "Condition B",
-                    weather: $condition2Weather,
-                    time: $condition2Time,
-                    color: AppColors.accent
-                )
-                .padding(.horizontal, AppSpacing.md)
-                
-                // Comparison results
-                ComparisonResults(
-                    stats1: dataService.getConditionStats(weather: condition1Weather, time: condition1Time),
-                    stats2: dataService.getConditionStats(weather: condition2Weather, time: condition2Time),
-                    label1: "\(condition1Weather.shortName) + \(condition1Time.displayName)",
-                    label2: "\(condition2Weather.shortName) + \(condition2Time.displayName)"
-                )
-                .padding(.horizontal, AppSpacing.md)
-                
-                // Recommendation
-                if let recommendation = generateRecommendation() {
-                    CardView(title: "Recommendation") {
-                        RecommendationCard(text: recommendation)
-                    }
-                    .padding(.horizontal, AppSpacing.md)
-                }
-                
-                Spacer(minLength: AppSpacing.xl)
-            }
-            .padding(.top, AppSpacing.md)
-        }
-        .background(AppColors.background.ignoresSafeArea())
-    }
-    
-    private func generateRecommendation() -> String? {
-        let stats1 = dataService.getConditionStats(weather: condition1Weather, time: condition1Time)
-        let stats2 = dataService.getConditionStats(weather: condition2Weather, time: condition2Time)
-        
-        guard stats1.timesInCondition > 0 || stats2.timesInCondition > 0 else {
-            return nil
-        }
-        
-        if stats1.timesInCondition == 0 {
-            return "You haven't fished during \(condition1Weather.displayName.lowercased()) \(condition1Time.displayName.lowercased()) yet. Try it to compare!"
-        }
-        
-        if stats2.timesInCondition == 0 {
-            return "You haven't fished during \(condition2Weather.displayName.lowercased()) \(condition2Time.displayName.lowercased()) yet. Try it to compare!"
-        }
-        
-        let diff = stats1.averageRating - stats2.averageRating
-        
-        if abs(diff) < 0.5 {
-            return "Both conditions perform similarly. Choose based on your preference!"
-        } else if diff > 0 {
-            return "\(condition1Weather.displayName) \(condition1Time.displayName.lowercased()) is your better choice with \(String(format: "%.1f", diff)) higher average rating."
-        } else {
-            return "\(condition2Weather.displayName) \(condition2Time.displayName.lowercased()) is your better choice with \(String(format: "%.1f", abs(diff))) higher average rating."
-        }
-    }
-}
+    @ObservedObject var settings: SettingsService
+    @State private var showingAddEntry = false
+    @State private var newEntry = LightJournalEntry()
 
-struct ConditionSelector: View {
-    let title: String
-    @Binding var weather: WeatherCondition
-    @Binding var time: TimeOfDay
-    let color: Color
-    
     var body: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.md) {
-            HStack {
-                Circle()
-                    .fill(color)
-                    .frame(width: 12, height: 12)
-                
-                Text(title)
-                    .font(AppTypography.headline)
-                    .foregroundColor(AppColors.textPrimary)
-            }
-            
-            VStack(spacing: AppSpacing.sm) {
-                // Weather picker
-                HStack(spacing: AppSpacing.sm) {
-                    ForEach(WeatherCondition.allCases) { condition in
-                        Button(action: { weather = condition }) {
-                            ZStack {
-                                Circle()
-                                    .fill(weather == condition ? color.opacity(0.2) : AppColors.surface)
-                                    .frame(width: 48, height: 48)
-                                
-                                WeatherIcon(condition: condition, size: 24)
+        ScrollView(.vertical, showsIndicators: false) {
+            VStack(spacing: 20) {
+                SectionHeader(title: "Light Journal", icon: AnyView(
+                    JournalShape()
+                        .stroke(AppTheme.amber, lineWidth: 1.5)
+                ))
+
+                // Add entry button
+                Button(action: { showingAddEntry.toggle() }) {
+                    HStack {
+                        Text("+")
+                            .font(.title2)
+                            .fontWeight(.bold)
+                        Text("Log Fishing Session")
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                    }
+                    .foregroundColor(AppTheme.backgroundPrimary)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+                    .background(AppTheme.amber)
+                    .cornerRadius(12)
+                }
+
+                // Stats summary (if entries exist)
+                if !dataService.journalEntries.isEmpty {
+                    GlowCardView(glowColor: AppTheme.coolBlue) {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Your Light Data")
+                                .font(.subheadline)
+                                .fontWeight(.medium)
+                                .foregroundColor(AppTheme.warmWhite)
+
+                            HStack {
+                                statItem(label: "Sessions", value: "\(dataService.journalEntries.count)")
+                                Spacer()
+                                let totalCatch = dataService.journalEntries.map(\.catchCount).reduce(0, +)
+                                statItem(label: "Total Catch", value: "\(totalCatch)")
+                                Spacer()
+                                statItem(label: "Avg Lux", value: String(format: "%.0f", dataService.averageLuxForCatches))
                             }
-                            .overlay(
-                                Circle()
-                                    .stroke(weather == condition ? color : Color.clear, lineWidth: 2)
-                            )
+
+                            let rates = dataService.catchRateByTimeOfDay()
+                            if !rates.isEmpty {
+                                Text("Catch Rate by Time")
+                                    .font(.caption)
+                                    .foregroundColor(AppTheme.dimText)
+                                    .padding(.top, 4)
+                                TimeWindowBarChart(windows: rates.map { ($0.0, $0.1) })
+                            }
                         }
-                        .buttonStyle(PlainButtonStyle())
                     }
                 }
-                
-                // Time picker
-                HStack(spacing: AppSpacing.sm) {
-                    ForEach(TimeOfDay.allCases) { timeOfDay in
-                        Button(action: { time = timeOfDay }) {
-                            Text(timeOfDay.displayName)
-                                .font(AppTypography.caption)
-                                .foregroundColor(time == timeOfDay ? .white : AppColors.textSecondary)
-                                .padding(.horizontal, AppSpacing.sm)
-                                .padding(.vertical, AppSpacing.xs)
-                                .background(
-                                    RoundedRectangle(cornerRadius: AppCorners.small)
-                                        .fill(time == timeOfDay ? color : AppColors.surface)
-                                )
+
+                // Journal entries list
+                if dataService.journalEntries.isEmpty {
+                    GlowCardView {
+                        VStack(spacing: 8) {
+                            JournalShape()
+                                .stroke(AppTheme.dimText, lineWidth: 1)
+                                .frame(width: 40, height: 40)
+                            Text("No journal entries yet")
+                                .font(.subheadline)
+                                .foregroundColor(AppTheme.dimText)
+                            Text("Log your fishing sessions with light conditions to build personal data.")
+                                .font(.caption)
+                                .foregroundColor(AppTheme.dimText)
+                                .multilineTextAlignment(.center)
                         }
-                        .buttonStyle(PlainButtonStyle())
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 10)
+                    }
+                } else {
+                    ForEach(dataService.journalEntries) { entry in
+                        GlowCardView {
+                            VStack(alignment: .leading, spacing: 8) {
+                                HStack {
+                                    Text(formatDate(entry.date))
+                                        .font(.subheadline)
+                                        .fontWeight(.medium)
+                                        .foregroundColor(AppTheme.warmWhite)
+                                    Spacer()
+                                    Text(entry.timeOfDay)
+                                        .font(.caption)
+                                        .foregroundColor(AppTheme.amber)
+                                        .padding(.horizontal, 8)
+                                        .padding(.vertical, 3)
+                                        .background(AppTheme.amber.opacity(0.12))
+                                        .cornerRadius(6)
+                                }
+
+                                HStack(spacing: 16) {
+                                    miniStat(label: "Depth", value: "\(Int(entry.depthFishedFeet)) ft")
+                                    miniStat(label: "Lux", value: String(format: "%.0f", entry.estimatedLux))
+                                    miniStat(label: "Catch", value: "\(entry.catchCount)")
+                                    miniStat(label: "Ice", value: "\(Int(entry.iceThicknessInches))\"")
+                                }
+
+                                if !entry.speciesCaught.isEmpty {
+                                    let names = entry.speciesCaught.compactMap { id in
+                                        FishSpecies.allSpecies.first { $0.id == id }?.name
+                                    }
+                                    Text("Caught: " + names.joined(separator: ", "))
+                                        .font(.caption)
+                                        .foregroundColor(AppTheme.bodyText)
+                                }
+
+                                if !entry.notes.isEmpty {
+                                    Text(entry.notes)
+                                        .font(.caption)
+                                        .foregroundColor(AppTheme.dimText)
+                                        .lineLimit(2)
+                                }
+
+                                // Delete button
+                                HStack {
+                                    Spacer()
+                                    Button(action: { dataService.deleteEntry(id: entry.id) }) {
+                                        Text("Delete")
+                                            .font(.caption)
+                                            .foregroundColor(Color.red.opacity(0.7))
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
+            .padding(.horizontal, 16)
+            .padding(.bottom, 30)
         }
-        .padding(AppSpacing.md)
-        .background(AppColors.cardBackground)
-        .cornerRadius(AppCorners.large)
-        .shadow(color: Color.black.opacity(0.04), radius: 4, x: 0, y: 2)
+        .sheet(isPresented: $showingAddEntry) {
+            addEntrySheet
+        }
     }
-}
 
-struct ComparisonResults: View {
-    let stats1: ConditionStats
-    let stats2: ConditionStats
-    let label1: String
-    let label2: String
-    
-    var body: some View {
-        VStack(spacing: AppSpacing.md) {
-            // Comparison bars
-            ComparisonRow(
-                title: "Times Fished",
-                value1: Double(stats1.timesInCondition),
-                value2: Double(stats2.timesInCondition),
-                format: "%.0f",
-                maxValue: Double(max(stats1.timesInCondition, stats2.timesInCondition, 1))
+    private var addEntrySheet: some View {
+        NavigationView {
+            ScrollView {
+                VStack(spacing: 16) {
+                    DatePicker("Date", selection: $newEntry.date, displayedComponents: .date)
+                        .accentColor(AppTheme.amber)
+
+                    GlowSlider(label: "Latitude", value: $newEntry.latitude, range: 25...70, step: 0.5, unit: "N")
+                    GlowSlider(label: "Ice Thickness", value: $newEntry.iceThicknessInches, range: 2...48, step: 1, unit: "in", format: "%.0f")
+                    GlowSlider(label: "Snow Cover", value: $newEntry.snowCoverInches, range: 0...24, step: 0.5, unit: "in")
+
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Water Clarity")
+                            .font(.subheadline)
+                            .foregroundColor(AppTheme.dimText)
+                        ClarityPicker(clarity: $newEntry.waterClarity)
+                    }
+
+                    GlowSlider(label: "Depth Fished", value: $newEntry.depthFishedFeet, range: 1...100, step: 1, unit: "ft", format: "%.0f")
+
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Time of Day")
+                            .font(.subheadline)
+                            .foregroundColor(AppTheme.dimText)
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 6) {
+                                ForEach(LightJournalEntry.timeOptions, id: \.self) { time in
+                                    Button(action: { newEntry.timeOfDay = time }) {
+                                        Text(time)
+                                            .font(.caption)
+                                            .padding(.horizontal, 10)
+                                            .padding(.vertical, 6)
+                                            .foregroundColor(newEntry.timeOfDay == time ? AppTheme.backgroundPrimary : AppTheme.bodyText)
+                                            .background(newEntry.timeOfDay == time ? AppTheme.amber : AppTheme.backgroundSecondary)
+                                            .cornerRadius(8)
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // Species selector for targeted
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Species Targeted")
+                            .font(.subheadline)
+                            .foregroundColor(AppTheme.dimText)
+                        SpeciesSelector(selectedID: $newEntry.speciesTargeted, species: FishSpecies.allSpecies)
+                    }
+
+                    NumberInputField(label: "Catch Count", value: Binding(
+                        get: { Double(newEntry.catchCount) },
+                        set: { newEntry.catchCount = Int($0) }
+                    ), range: 0...99, step: 1, unit: "fish", format: "%.0f")
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Notes")
+                            .font(.subheadline)
+                            .foregroundColor(AppTheme.dimText)
+                        TextEditor(text: $newEntry.notes)
+                            .frame(height: 60)
+                            .padding(4)
+                            .background(AppTheme.backgroundSecondary)
+                            .cornerRadius(8)
+                            .foregroundColor(AppTheme.bodyText)
+                    }
+                }
+                .padding(16)
+            }
+            .background(AppTheme.backgroundPrimary.ignoresSafeArea())
+            .navigationBarTitle("Log Session", displayMode: .inline)
+            .navigationBarItems(
+                leading: Button("Cancel") { showingAddEntry = false }
+                    .foregroundColor(AppTheme.dimText),
+                trailing: Button("Save") {
+                    // Calculate estimated lux
+                    let cond = IceCondition(iceThicknessInches: newEntry.iceThicknessInches, snowCoverInches: newEntry.snowCoverInches, waterClarity: newEntry.waterClarity)
+                    let solar = SolarCalculator(latitude: newEntry.latitude, date: newEntry.date)
+                    let hourForTime: Double = {
+                        switch newEntry.timeOfDay {
+                        case "Dawn": return 6
+                        case "Morning": return 9
+                        case "Midday": return 12
+                        case "Afternoon": return 15
+                        case "Dusk": return 18
+                        case "Night": return 22
+                        default: return 12
+                        }
+                    }()
+                    let surfLux = solar.surfaceLux(atHour: hourForTime)
+                    newEntry.estimatedLux = cond.luxAtDepth(surfaceLux: surfLux, depthFeet: newEntry.depthFishedFeet)
+                    dataService.addEntry(newEntry)
+                    newEntry = LightJournalEntry()
+                    showingAddEntry = false
+                }
+                .foregroundColor(AppTheme.amber)
             )
-            
-            ComparisonRow(
-                title: "Average Rating",
-                value1: stats1.averageRating,
-                value2: stats2.averageRating,
-                format: "%.1f",
-                maxValue: 10
-            )
-            
-            // Best days
-            HStack(spacing: AppSpacing.md) {
-                BestDayCard(label: label1, record: stats1.bestDay)
-                BestDayCard(label: label2, record: stats2.bestDay)
-            }
         }
-        .padding(AppSpacing.md)
-        .background(AppColors.cardBackground)
-        .cornerRadius(AppCorners.large)
-        .shadow(color: Color.black.opacity(0.04), radius: 4, x: 0, y: 2)
     }
-}
 
-struct ComparisonRow: View {
-    let title: String
-    let value1: Double
-    let value2: Double
-    let format: String
-    let maxValue: Double
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.xs) {
-            Text(title)
-                .font(AppTypography.caption)
-                .foregroundColor(AppColors.textSecondary)
-            
-            HStack(spacing: AppSpacing.sm) {
-                // Value 1
-                Text(String(format: format, value1))
-                    .font(AppTypography.callout)
-                    .foregroundColor(AppColors.textPrimary)
-                    .frame(width: 40, alignment: .trailing)
-                
-                // Bar 1
-                GeometryReader { geometry in
-                    ZStack(alignment: .leading) {
-                        RoundedRectangle(cornerRadius: 3)
-                            .fill(AppColors.surface)
-                        
-                        RoundedRectangle(cornerRadius: 3)
-                            .fill(AppColors.primary)
-                            .frame(width: max(4, geometry.size.width * CGFloat(value1 / maxValue)))
-                    }
-                }
-                .frame(height: 12)
-                
-                // Bar 2
-                GeometryReader { geometry in
-                    ZStack(alignment: .trailing) {
-                        RoundedRectangle(cornerRadius: 3)
-                            .fill(AppColors.surface)
-                        
-                        RoundedRectangle(cornerRadius: 3)
-                            .fill(AppColors.accent)
-                            .frame(width: max(4, geometry.size.width * CGFloat(value2 / maxValue)))
-                    }
-                }
-                .frame(height: 12)
-                
-                // Value 2
-                Text(String(format: format, value2))
-                    .font(AppTypography.callout)
-                    .foregroundColor(AppColors.textPrimary)
-                    .frame(width: 40, alignment: .leading)
-            }
-        }
+    private func formatDate(_ date: Date) -> String {
+        let df = DateFormatter()
+        df.dateFormat = "MMM d, yyyy"
+        df.locale = Locale(identifier: "en_US")
+        return df.string(from: date)
     }
-}
 
-struct BestDayCard: View {
-    let label: String
-    let record: FishingRecord?
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.xs) {
-            Text("Best: \(label)")
-                .font(AppTypography.caption)
-                .foregroundColor(AppColors.textSecondary)
-                .lineLimit(1)
-            
-            if let record = record {
-                HStack {
-                    Text(formattedDate(record.date))
-                        .font(AppTypography.callout)
-                        .foregroundColor(AppColors.textPrimary)
-                    
-                    Spacer()
-                    
-                    Text("\(record.catchRating)")
-                        .font(AppTypography.headline)
-                        .foregroundColor(AppColors.excellent)
-                }
-            } else {
-                Text("No data")
-                    .font(AppTypography.callout)
-                    .foregroundColor(AppColors.textSecondary)
-            }
+    private func statItem(label: String, value: String) -> some View {
+        VStack(spacing: 2) {
+            Text(value)
+                .font(.headline)
+                .foregroundColor(AppTheme.amber)
+            Text(label)
+                .font(.caption2)
+                .foregroundColor(AppTheme.dimText)
         }
-        .padding(AppSpacing.sm)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(AppColors.surface)
-        .cornerRadius(AppCorners.small)
     }
-    
-    private func formattedDate(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "MMM d"
-        return formatter.string(from: date)
+
+    private func miniStat(label: String, value: String) -> some View {
+        VStack(spacing: 1) {
+            Text(value)
+                .font(.caption)
+                .fontWeight(.bold)
+                .foregroundColor(AppTheme.warmWhite)
+            Text(label)
+                .font(.system(size: 9))
+                .foregroundColor(AppTheme.dimText)
+        }
     }
 }

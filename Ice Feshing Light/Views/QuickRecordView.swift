@@ -1,189 +1,155 @@
 import SwiftUI
 
-struct QuickRecordView: View {
-    @ObservedObject var dataService: DataService
-    @ObservedObject var settingsService: SettingsService
-    
-    @State private var selectedWeather: WeatherCondition = .clear
-    @State private var selectedTimes: [TimeOfDay] = []
-    @State private var catchRating: Int = 5
-    @State private var selectedFishIds: [UUID] = []
-    @State private var biteCount: Int = 0
-    @State private var caughtCount: Int = 0
-    @State private var showSaveConfirmation = false
-    
-    let onNavigateToHistory: () -> Void
-    
-    var body: some View {
-        ScrollView {
-            VStack(spacing: AppSpacing.lg) {
-                // Header with date
-                HStack {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Today's Fishing")
-                            .font(AppTypography.largeTitle)
-                            .foregroundColor(AppColors.textPrimary)
-                        
-                        Text(formattedDate)
-                            .font(AppTypography.body)
-                            .foregroundColor(AppColors.textSecondary)
-                    }
-                    
-                    Spacer()
-                    
-                    Button(action: onNavigateToHistory) {
-                        HStack(spacing: AppSpacing.xs) {
-                            CalendarIcon(size: 20, color: AppColors.primary)
-                            Text("History")
-                                .font(AppTypography.callout)
-                                .foregroundColor(AppColors.primary)
-                        }
-                        .padding(.horizontal, AppSpacing.md)
-                        .padding(.vertical, AppSpacing.sm)
-                        .background(
-                            RoundedRectangle(cornerRadius: AppCorners.medium)
-                                .stroke(AppColors.primary, lineWidth: 1.5)
-                        )
-                    }
-                }
-                .padding(.horizontal, AppSpacing.md)
-                
-                // Weather selection
-                CardView(title: "Lighting Conditions") {
-                    WeatherButtonGroup(selected: $selectedWeather)
-                }
-                .padding(.horizontal, AppSpacing.md)
-                
-                // Time of day
-                CardView(title: "Time of Day") {
-                    TimeOfDaySelector(selected: $selectedTimes)
-                }
-                .padding(.horizontal, AppSpacing.md)
-                
-                // Catch rating
-                CardView(title: "Catch Rating") {
-                    CatchRatingView(rating: $catchRating)
-                }
-                .padding(.horizontal, AppSpacing.md)
-                
-                // Fish types
-                CardView(title: "Fish Species") {
-                    FishTypeSelector(
-                        fishTypes: settingsService.fishTypes,
-                        selectedIds: $selectedFishIds
-                    )
-                }
-                .padding(.horizontal, AppSpacing.md)
-                
-                // Counts
-                VStack(spacing: AppSpacing.sm) {
-                    NumberInputField(title: "Number of Bites", value: $biteCount)
-                    NumberInputField(title: "Fish Caught", value: $caughtCount)
-                }
-                .padding(.horizontal, AppSpacing.md)
-                
-                // Save button
-                Button(action: saveRecord) {
-                    HStack(spacing: AppSpacing.sm) {
-                        SaveIcon(size: 22, color: .white)
-                        Text("Save Record")
-                    }
-                }
-                .buttonStyle(PrimaryButtonStyle())
-                .padding(.horizontal, AppSpacing.md)
-                .padding(.bottom, AppSpacing.xl)
-            }
-            .padding(.top, AppSpacing.md)
-        }
-        .background(AppColors.background.ignoresSafeArea())
-        .overlay(
-            Group {
-                if showSaveConfirmation {
-                    SaveConfirmationOverlay {
-                        showSaveConfirmation = false
-                    }
-                }
-            }
-        )
-    }
-    
-    private var formattedDate: String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "EEEE, MMMM d, yyyy"
-        return formatter.string(from: Date())
-    }
-    
-    private func saveRecord() {
-        let record = FishingRecord(
-            date: Date(),
-            weather: selectedWeather,
-            timesOfDay: selectedTimes,
-            catchRating: catchRating,
-            fishTypeIds: selectedFishIds,
-            biteCount: biteCount,
-            caughtCount: caughtCount
-        )
-        
-        dataService.saveRecord(record)
-        
-        // Reset form
-        selectedWeather = .clear
-        selectedTimes = []
-        catchRating = 5
-        selectedFishIds = []
-        biteCount = 0
-        caughtCount = 0
-        
-        showSaveConfirmation = true
-    }
-}
+// MARK: - Light Dashboard View (main screen)
 
-struct SaveConfirmationOverlay: View {
-    let onDismiss: () -> Void
-    
-    @State private var opacity: Double = 0
-    
+struct LightDashboardView: View {
+    @ObservedObject var settings: SettingsService
+    @State private var iceThickness: Double = 12
+    @State private var snowCover: Double = 2
+    @State private var waterClarity: IceCondition.WaterClarity = .clear
+    @State private var targetDepth: Double = 15
+
+    private var condition: IceCondition {
+        IceCondition(iceThicknessInches: iceThickness, snowCoverInches: snowCover, waterClarity: waterClarity)
+    }
+
+    private var solar: SolarCalculator {
+        SolarCalculator(latitude: settings.latitude, date: Date())
+    }
+
+    private var currentHour: Double {
+        let cal = Calendar.current
+        return Double(cal.component(.hour, from: Date())) + Double(cal.component(.minute, from: Date())) / 60.0
+    }
+
+    private var surfaceLux: Double {
+        solar.surfaceLux(atHour: currentHour)
+    }
+
+    private var luxAtTarget: Double {
+        condition.luxAtDepth(surfaceLux: surfaceLux, depthFeet: targetDepth)
+    }
+
     var body: some View {
-        ZStack {
-            Color.black.opacity(0.4)
-                .ignoresSafeArea()
-            
-            VStack(spacing: AppSpacing.md) {
+        ScrollView(.vertical, showsIndicators: false) {
+            VStack(spacing: 20) {
+                // Header with light rays
                 ZStack {
-                    Circle()
-                        .fill(AppColors.excellent)
-                        .frame(width: 60, height: 60)
-                    
-                    SaveIcon(size: 32, color: .white)
+                    LightRaysView(rayCount: 16, color: AppTheme.amber)
+                        .frame(height: 140)
+                        .clipped()
+
+                    VStack(spacing: 8) {
+                        SunShape()
+                            .stroke(AppTheme.amber, lineWidth: 2)
+                            .frame(width: 40, height: 40)
+
+                        Text("Current Light Conditions")
+                            .font(.title2)
+                            .fontWeight(.bold)
+                            .foregroundColor(AppTheme.warmWhite)
+
+                        Text(timeLabel)
+                            .font(.caption)
+                            .foregroundColor(AppTheme.dimText)
+                    }
+                    .padding(.top, 20)
                 }
-                
-                Text("Record Saved!")
-                    .font(AppTypography.title)
-                    .foregroundColor(AppColors.textPrimary)
-                
-                Text("Ready for next entry")
-                    .font(AppTypography.body)
-                    .foregroundColor(AppColors.textSecondary)
+
+                // Current light readings
+                GlowCardView {
+                    VStack(spacing: 16) {
+                        HStack(spacing: 20) {
+                            LuxGauge(currentLux: surfaceLux, maxLux: 100000, label: "Surface")
+                                .frame(width: 90, height: 100)
+                            LuxGauge(currentLux: surfaceLux * condition.iceTransmittance, maxLux: 100000, label: "Below Ice")
+                                .frame(width: 90, height: 100)
+                            LuxGauge(currentLux: luxAtTarget, maxLux: 100000, label: "\(Int(targetDepth)) ft Depth")
+                                .frame(width: 90, height: 100)
+                        }
+
+                        // Ice cross section mini
+                        IceCrossSectionView(iceThickness: iceThickness, snowCover: snowCover)
+                            .frame(height: 100)
+                            .cornerRadius(8)
+                    }
+                }
+
+                // Condition sliders
+                GlowCardView(glowColor: AppTheme.iceBlue) {
+                    VStack(spacing: 14) {
+                        SectionHeader(title: "Ice Conditions", icon: AnyView(
+                            IceCrystalShape()
+                                .stroke(AppTheme.iceBlue, lineWidth: 1.5)
+                        ))
+
+                        GlowSlider(label: "Ice Thickness", value: $iceThickness, range: 2...48, step: 1, unit: "in", format: "%.0f")
+                        GlowSlider(label: "Snow Cover", value: $snowCover, range: 0...24, step: 0.5, unit: "in")
+                        ClarityPicker(clarity: $waterClarity)
+                        GlowSlider(label: "Target Depth", value: $targetDepth, range: 1...100, step: 1, unit: "ft", format: "%.0f")
+
+                        HStack {
+                            Text("Transmittance:")
+                                .font(.caption)
+                                .foregroundColor(AppTheme.dimText)
+                            Spacer()
+                            Text(String(format: "%.1f%%", condition.iceTransmittance * 100))
+                                .font(.caption)
+                                .fontWeight(.bold)
+                                .foregroundColor(AppTheme.amber)
+                        }
+                    }
+                }
+
+                // Quick species match
+                GlowCardView(glowColor: AppTheme.amber) {
+                    VStack(alignment: .leading, spacing: 10) {
+                        SectionHeader(title: "Species at This Light", icon: AnyView(
+                            FishShape()
+                                .fill(AppTheme.amber)
+                        ))
+
+                        let matchedSpecies = FishSpecies.allSpecies.filter {
+                            luxAtTarget >= $0.preferredLuxMin && luxAtTarget <= $0.preferredLuxMax
+                        }
+
+                        if matchedSpecies.isEmpty {
+                            Text("No species prefer this light level (\(String(format: "%.0f", luxAtTarget)) lux). Adjust depth or conditions.")
+                                .font(.caption)
+                                .foregroundColor(AppTheme.dimText)
+                        } else {
+                            ForEach(matchedSpecies) { sp in
+                                HStack {
+                                    FishShape()
+                                        .fill(AppTheme.amber)
+                                        .frame(width: 20, height: 14)
+                                    Text(sp.name)
+                                        .font(.subheadline)
+                                        .fontWeight(.medium)
+                                        .foregroundColor(AppTheme.warmWhite)
+                                    Spacer()
+                                    Text(sp.lightCategory)
+                                        .font(.caption2)
+                                        .foregroundColor(AppTheme.amber)
+                                        .padding(.horizontal, 8)
+                                        .padding(.vertical, 3)
+                                        .background(AppTheme.amber.opacity(0.12))
+                                        .cornerRadius(6)
+                                }
+                            }
+                        }
+                    }
+                }
             }
-            .padding(AppSpacing.xl)
-            .background(AppColors.cardBackground)
-            .cornerRadius(AppCorners.xl)
-            .scaleEffect(opacity == 1 ? 1 : 0.8)
+            .padding(.horizontal, 16)
+            .padding(.bottom, 30)
         }
-        .opacity(opacity)
-        .onAppear {
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                opacity = 1
-            }
-            
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-                withAnimation(.easeOut(duration: 0.2)) {
-                    opacity = 0
-                }
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                    onDismiss()
-                }
-            }
-        }
+    }
+
+    private var timeLabel: String {
+        let df = DateFormatter()
+        df.dateFormat = "EEEE, MMM d - h:mm a"
+        df.locale = Locale(identifier: "en_US")
+        return df.string(from: Date())
     }
 }

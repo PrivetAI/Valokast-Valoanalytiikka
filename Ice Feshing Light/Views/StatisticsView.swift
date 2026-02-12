@@ -1,337 +1,151 @@
 import SwiftUI
 
-struct StatisticsView: View {
-    @ObservedObject var dataService: DataService
-    @ObservedObject var settingsService: SettingsService
-    
-    let onNavigateToCharts: () -> Void
-    let onNavigateBack: () -> Void
-    
-    var body: some View {
-        ScrollView {
-            VStack(spacing: AppSpacing.lg) {
-                // Header
-                HStack {
-                    Button(action: onNavigateBack) {
-                        BackIcon(size: 24, color: AppColors.primary)
-                    }
-                    
-                    Spacer()
-                    
-                    Text("Statistics")
-                        .font(AppTypography.title)
-                        .foregroundColor(AppColors.textPrimary)
-                    
-                    Spacer()
-                    
-                    Button(action: onNavigateToCharts) {
-                        ChartIcon(size: 24, color: AppColors.primary)
-                    }
-                }
-                .padding(.horizontal, AppSpacing.md)
-                
-                // Weather and Catch section
-                WeatherStatsSection(stats: dataService.getWeatherStats())
-                
-                // Time of Day section
-                TimeStatsSection(stats: dataService.getTimeStats())
-                
-                // Fish Stats section
-                FishStatsSection(
-                    stats: dataService.getFishStats(fishTypes: settingsService.fishTypes),
-                    fishTypes: settingsService.fishTypes
-                )
-                
-                // Overall Stats section
-                OverallStatsSection(stats: dataService.getOverallStats())
-                
-                // Recommendations section
-                RecommendationsSection(
-                    recommendations: dataService.getRecommendations(fishTypes: settingsService.fishTypes)
-                )
-                
-                Spacer(minLength: AppSpacing.xl)
-            }
-            .padding(.top, AppSpacing.md)
-        }
-        .background(AppColors.background.ignoresSafeArea())
-    }
-}
+// MARK: - Species Light Preferences View
 
-struct WeatherStatsSection: View {
-    let stats: [WeatherCondition: WeatherStats]
-    
+struct SpeciesLightView: View {
+    @State private var expandedID: String? = nil
+
     var body: some View {
-        CardView(title: "Weather & Catch") {
-            if stats.isEmpty {
-                EmptyStatsMessage()
-            } else {
-                VStack(spacing: AppSpacing.md) {
-                    HStack(spacing: AppSpacing.sm) {
-                        ForEach(WeatherCondition.allCases) { condition in
-                            if let stat = stats[condition] {
-                                WeatherStatColumn(condition: condition, stat: stat)
-                            } else {
-                                WeatherStatColumn(condition: condition, stat: nil)
+        ScrollView(.vertical, showsIndicators: false) {
+            VStack(spacing: 16) {
+                SectionHeader(title: "Species Light Preferences", icon: AnyView(
+                    FishShape()
+                        .fill(AppTheme.amber)
+                ))
+
+                Text("How light intensity affects fish behavior and feeding under ice.")
+                    .font(.caption)
+                    .foregroundColor(AppTheme.dimText)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                ForEach(FishSpecies.allSpecies) { sp in
+                    GlowCardView(glowColor: expandedID == sp.id ? AppTheme.amber : AppTheme.backgroundCard) {
+                        VStack(alignment: .leading, spacing: 0) {
+                            // Header row (always visible)
+                            Button(action: {
+                                withAnimation(.easeInOut(duration: 0.25)) {
+                                    expandedID = expandedID == sp.id ? nil : sp.id
+                                }
+                            }) {
+                                HStack {
+                                    FishShape()
+                                        .fill(AppTheme.amber)
+                                        .frame(width: 24, height: 16)
+
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(sp.name)
+                                            .font(.headline)
+                                            .foregroundColor(AppTheme.warmWhite)
+                                        Text(sp.lightCategory)
+                                            .font(.caption2)
+                                            .foregroundColor(AppTheme.amber)
+                                    }
+
+                                    Spacer()
+
+                                    // Light range indicator
+                                    VStack(alignment: .trailing, spacing: 2) {
+                                        Text("\(String(format: "%.0f", sp.preferredLuxMin))-\(String(format: "%.0f", sp.preferredLuxMax))")
+                                            .font(.caption)
+                                            .fontWeight(.bold)
+                                            .foregroundColor(AppTheme.amber)
+                                        Text("lux range")
+                                            .font(.system(size: 9))
+                                            .foregroundColor(AppTheme.dimText)
+                                    }
+
+                                    // Expand chevron
+                                    Path { path in
+                                        let w: CGFloat = 10
+                                        let h: CGFloat = 6
+                                        if expandedID == sp.id {
+                                            path.move(to: CGPoint(x: 0, y: h))
+                                            path.addLine(to: CGPoint(x: w / 2, y: 0))
+                                            path.addLine(to: CGPoint(x: w, y: h))
+                                        } else {
+                                            path.move(to: CGPoint(x: 0, y: 0))
+                                            path.addLine(to: CGPoint(x: w / 2, y: h))
+                                            path.addLine(to: CGPoint(x: w, y: 0))
+                                        }
+                                    }
+                                    .stroke(AppTheme.dimText, lineWidth: 1.5)
+                                    .frame(width: 10, height: 6)
+                                    .padding(.leading, 6)
+                                }
+                            }
+                            .buttonStyle(PlainButtonStyle())
+
+                            // Expanded detail
+                            if expandedID == sp.id {
+                                VStack(alignment: .leading, spacing: 12) {
+                                    Divider().background(AppTheme.amber.opacity(0.3))
+
+                                    // Light range bar
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text("Preferred Light Range")
+                                            .font(.caption)
+                                            .fontWeight(.medium)
+                                            .foregroundColor(AppTheme.dimText)
+
+                                        GeometryReader { geo in
+                                            let totalW = geo.size.width
+                                            let logMin = log10(max(1, sp.preferredLuxMin)) / 5.0
+                                            let logMax = log10(max(1, sp.preferredLuxMax)) / 5.0
+                                            ZStack(alignment: .leading) {
+                                                Capsule().fill(AppTheme.backgroundSecondary).frame(height: 10)
+                                                Capsule()
+                                                    .fill(AppTheme.amber.opacity(0.6))
+                                                    .frame(width: totalW * CGFloat(logMax - logMin), height: 10)
+                                                    .offset(x: totalW * CGFloat(logMin))
+                                            }
+                                        }
+                                        .frame(height: 10)
+
+                                        HStack {
+                                            Text("0 lux")
+                                                .font(.system(size: 8))
+                                                .foregroundColor(AppTheme.dimText)
+                                            Spacer()
+                                            Text("100k lux")
+                                                .font(.system(size: 8))
+                                                .foregroundColor(AppTheme.dimText)
+                                        }
+                                    }
+
+                                    // Depth range
+                                    HStack {
+                                        VStack(alignment: .leading, spacing: 2) {
+                                            Text("Optimal Depth")
+                                                .font(.caption)
+                                                .foregroundColor(AppTheme.dimText)
+                                            Text("\(String(format: "%.0f", sp.optimalDepthMinFt)) - \(String(format: "%.0f", sp.optimalDepthMaxFt)) ft")
+                                                .font(.subheadline)
+                                                .fontWeight(.bold)
+                                                .foregroundColor(AppTheme.coolBlue)
+                                        }
+                                        Spacer()
+                                    }
+
+                                    // Feeding note
+                                    Text(sp.feedingLightNote)
+                                        .font(.caption)
+                                        .foregroundColor(AppTheme.bodyText)
+                                        .fixedSize(horizontal: false, vertical: true)
+
+                                    // Full description
+                                    Text(sp.description)
+                                        .font(.caption)
+                                        .foregroundColor(AppTheme.dimText)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                }
+                                .padding(.top, 10)
                             }
                         }
                     }
                 }
             }
+            .padding(.horizontal, 16)
+            .padding(.bottom, 30)
         }
-        .padding(.horizontal, AppSpacing.md)
-    }
-}
-
-struct WeatherStatColumn: View {
-    let condition: WeatherCondition
-    let stat: WeatherStats?
-    
-    var body: some View {
-        VStack(spacing: AppSpacing.xs) {
-            WeatherIcon(condition: condition, size: 28)
-            
-            if let stat = stat {
-                Text("\(stat.daysCount)")
-                    .font(AppTypography.headline)
-                    .foregroundColor(AppColors.textPrimary)
-                
-                Text("days")
-                    .font(AppTypography.caption)
-                    .foregroundColor(AppColors.textSecondary)
-                
-                Text(String(format: "%.1f", stat.averageRating))
-                    .font(AppTypography.callout)
-                    .foregroundColor(ratingColor(stat.averageRating))
-                
-                Text("\(Int(stat.successRate))%")
-                    .font(AppTypography.caption)
-                    .foregroundColor(AppColors.excellent)
-            } else {
-                Text("-")
-                    .font(AppTypography.headline)
-                    .foregroundColor(AppColors.textSecondary)
-                
-                Text("days")
-                    .font(AppTypography.caption)
-                    .foregroundColor(AppColors.textSecondary)
-            }
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, AppSpacing.sm)
-        .background(AppColors.surface)
-        .cornerRadius(AppCorners.medium)
-    }
-    
-    private func ratingColor(_ rating: Double) -> Color {
-        if rating >= 8 { return AppColors.excellent }
-        if rating >= 4 { return AppColors.average }
-        return AppColors.poor
-    }
-}
-
-struct TimeStatsSection: View {
-    let stats: [TimeOfDay: TimeStats]
-    
-    var body: some View {
-        CardView(title: "Time of Day") {
-            if stats.isEmpty {
-                EmptyStatsMessage()
-            } else {
-                let data = TimeOfDay.allCases.compactMap { time -> BarChartData? in
-                    guard let stat = stats[time] else { return nil }
-                    return BarChartData(
-                        label: time.displayName,
-                        value: stat.averageRating,
-                        color: timeColor(time)
-                    )
-                }
-                
-                if !data.isEmpty {
-                    BarChart(data: data)
-                }
-            }
-        }
-        .padding(.horizontal, AppSpacing.md)
-    }
-    
-    private func timeColor(_ time: TimeOfDay) -> Color {
-        switch time {
-        case .morning: return AppColors.morning
-        case .day: return AppColors.day
-        case .evening: return AppColors.evening
-        case .night: return AppColors.night
-        }
-    }
-}
-
-struct FishStatsSection: View {
-    let stats: [UUID: FishStats]
-    let fishTypes: [FishType]
-    
-    var body: some View {
-        CardView(title: "By Fish Species") {
-            if stats.isEmpty {
-                EmptyStatsMessage()
-            } else {
-                VStack(spacing: AppSpacing.sm) {
-                    ForEach(fishTypes.filter { stats[$0.id] != nil }) { fish in
-                        if let stat = stats[fish.id] {
-                            FishStatRow(fish: fish, stat: stat)
-                        }
-                    }
-                }
-            }
-        }
-        .padding(.horizontal, AppSpacing.md)
-    }
-}
-
-struct FishStatRow: View {
-    let fish: FishType
-    let stat: FishStats
-    
-    var body: some View {
-        HStack(spacing: AppSpacing.md) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(fish.name)
-                    .font(AppTypography.callout)
-                    .foregroundColor(AppColors.textPrimary)
-                
-                HStack(spacing: AppSpacing.xs) {
-                    Text("\(stat.daysCount) days")
-                        .font(AppTypography.caption)
-                        .foregroundColor(AppColors.textSecondary)
-                    
-                    if let weather = stat.bestWeather {
-                        Text("•")
-                            .foregroundColor(AppColors.textSecondary)
-                        WeatherIcon(condition: weather, size: 14)
-                    }
-                    
-                    if let time = stat.bestTime {
-                        Text(time.displayName)
-                            .font(AppTypography.caption)
-                            .foregroundColor(AppColors.textSecondary)
-                    }
-                }
-            }
-            
-            Spacer()
-            
-            Text(String(format: "%.1f", stat.averageRating))
-                .font(AppTypography.headline)
-                .foregroundColor(ratingColor)
-        }
-        .padding(AppSpacing.sm)
-        .background(AppColors.surface)
-        .cornerRadius(AppCorners.small)
-    }
-    
-    private var ratingColor: Color {
-        if stat.averageRating >= 8 { return AppColors.excellent }
-        if stat.averageRating >= 4 { return AppColors.average }
-        return AppColors.poor
-    }
-}
-
-struct OverallStatsSection: View {
-    let stats: OverallStats
-    
-    var body: some View {
-        CardView(title: "Season Summary") {
-            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: AppSpacing.md) {
-                StatCard(
-                    title: "Days on Ice",
-                    value: "\(stats.totalDays)",
-                    color: AppColors.primary
-                )
-                
-                StatCard(
-                    title: "Total Bites",
-                    value: "\(stats.totalBites)",
-                    color: AppColors.accent
-                )
-                
-                StatCard(
-                    title: "Fish Caught",
-                    value: "\(stats.totalCaught)",
-                    color: AppColors.excellent
-                )
-                
-                StatCard(
-                    title: "Avg Rating",
-                    value: String(format: "%.1f", stats.averageRating),
-                    color: ratingColor
-                )
-            }
-            
-            if let bestDay = stats.bestDay {
-                HStack {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Best Day")
-                            .font(AppTypography.caption)
-                            .foregroundColor(AppColors.textSecondary)
-                        
-                        Text(formattedDate(bestDay.date))
-                            .font(AppTypography.callout)
-                            .foregroundColor(AppColors.textPrimary)
-                    }
-                    
-                    Spacer()
-                    
-                    HStack(spacing: AppSpacing.xs) {
-                        WeatherIcon(condition: bestDay.weather, size: 20)
-                        
-                        Text("\(bestDay.catchRating)")
-                            .font(AppTypography.headline)
-                            .foregroundColor(AppColors.excellent)
-                    }
-                }
-                .padding(AppSpacing.md)
-                .background(AppColors.excellent.opacity(0.1))
-                .cornerRadius(AppCorners.medium)
-            }
-        }
-        .padding(.horizontal, AppSpacing.md)
-    }
-    
-    private var ratingColor: Color {
-        if stats.averageRating >= 8 { return AppColors.excellent }
-        if stats.averageRating >= 4 { return AppColors.average }
-        return AppColors.poor
-    }
-    
-    private func formattedDate(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "MMM d, yyyy"
-        return formatter.string(from: date)
-    }
-}
-
-struct RecommendationsSection: View {
-    let recommendations: [String]
-    
-    var body: some View {
-        if !recommendations.isEmpty {
-            CardView(title: "Recommendations") {
-                VStack(spacing: AppSpacing.sm) {
-                    ForEach(recommendations, id: \.self) { recommendation in
-                        RecommendationCard(text: recommendation)
-                    }
-                }
-            }
-            .padding(.horizontal, AppSpacing.md)
-        }
-    }
-}
-
-struct EmptyStatsMessage: View {
-    var body: some View {
-        Text("No data yet. Start recording your fishing trips!")
-            .font(AppTypography.body)
-            .foregroundColor(AppColors.textSecondary)
-            .multilineTextAlignment(.center)
-            .padding(AppSpacing.lg)
     }
 }

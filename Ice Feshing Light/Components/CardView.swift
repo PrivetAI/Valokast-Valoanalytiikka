@@ -1,91 +1,43 @@
 import SwiftUI
 
-struct CardView<Content: View>: View {
-    let title: String?
-    let content: Content
-    
-    init(title: String? = nil, @ViewBuilder content: () -> Content) {
-        self.title = title
-        self.content = content()
+// MARK: - Glow Card View
+
+struct GlowCardView<Content: View>: View {
+    let glowColor: Color
+    let content: () -> Content
+
+    init(glowColor: Color = AppTheme.amber, @ViewBuilder content: @escaping () -> Content) {
+        self.glowColor = glowColor
+        self.content = content
     }
-    
+
     var body: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.md) {
-            if let title = title {
-                Text(title)
-                    .font(AppTypography.headline)
-                    .foregroundColor(AppColors.textPrimary)
-            }
-            
-            content
-        }
-        .padding(AppSpacing.md)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(AppColors.cardBackground)
-        .cornerRadius(AppCorners.large)
-        .shadow(color: Color.black.opacity(0.06), radius: 8, x: 0, y: 2)
+        content()
+            .padding(16)
+            .background(AppTheme.backgroundCard)
+            .cornerRadius(14)
+            .overlay(
+                RoundedRectangle(cornerRadius: 14)
+                    .stroke(glowColor.opacity(0.3), lineWidth: 1)
+            )
+            .shadow(color: glowColor.opacity(0.15), radius: 8, x: 0, y: 2)
     }
 }
 
-struct StatCard: View {
+// Section header used across the app
+struct SectionHeader: View {
     let title: String
-    let value: String
-    let subtitle: String?
-    let color: Color
-    
-    init(title: String, value: String, subtitle: String? = nil, color: Color = AppColors.primary) {
-        self.title = title
-        self.value = value
-        self.subtitle = subtitle
-        self.color = color
-    }
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.xs) {
-            Text(title)
-                .font(AppTypography.caption)
-                .foregroundColor(AppColors.textSecondary)
-            
-            Text(value)
-                .font(AppTypography.largeNumber)
-                .foregroundColor(color)
-            
-            if let subtitle = subtitle {
-                Text(subtitle)
-                    .font(AppTypography.caption)
-                    .foregroundColor(AppColors.textSecondary)
-            }
-        }
-        .padding(AppSpacing.md)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(AppColors.cardBackground)
-        .cornerRadius(AppCorners.medium)
-        .shadow(color: Color.black.opacity(0.06), radius: 6, x: 0, y: 2)
-    }
-}
+    let icon: AnyView
 
-struct RecommendationCard: View {
-    let text: String
-    
     var body: some View {
-        HStack(spacing: AppSpacing.md) {
-            Circle()
-                .fill(AppColors.primary.opacity(0.2))
-                .frame(width: 40, height: 40)
-                .overlay(
-                    FishIcon(size: 24, color: AppColors.primary)
-                )
-            
-            Text(text)
-                .font(AppTypography.body)
-                .foregroundColor(AppColors.textPrimary)
-                .fixedSize(horizontal: false, vertical: true)
-            
+        HStack(spacing: 10) {
+            icon
+                .frame(width: 22, height: 22)
+            Text(title)
+                .font(.title3)
+                .fontWeight(.semibold)
+                .foregroundColor(AppTheme.warmWhite)
             Spacer()
         }
-        .padding(AppSpacing.md)
-        .background(AppColors.cardBackground)
-        .cornerRadius(AppCorners.medium)
-        .shadow(color: Color.black.opacity(0.04), radius: 4, x: 0, y: 1)
     }
 }

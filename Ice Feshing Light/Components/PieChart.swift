@@ -1,111 +1,57 @@
 import SwiftUI
 
-struct PieSlice: Identifiable {
-    let id = UUID()
+// MARK: - Lux Gauge (circular gauge)
+
+struct LuxGauge: View {
+    let currentLux: Double
+    let maxLux: Double
     let label: String
-    let value: Double
-    let color: Color
-}
 
-struct PieChart: View {
-    let slices: [PieSlice]
-    var showLegend: Bool = true
-    
-    private var total: Double {
-        slices.map { $0.value }.reduce(0, +)
+    private var fraction: Double {
+        guard maxLux > 0, currentLux > 0 else { return 0 }
+        return min(1, log10(max(1, currentLux)) / log10(max(10, maxLux)))
     }
-    
+
     var body: some View {
-        HStack(spacing: AppSpacing.lg) {
-            // Pie
-            GeometryReader { geometry in
-                let size = min(geometry.size.width, geometry.size.height)
-                
-                ZStack {
-                    ForEach(Array(zip(slices.indices, slices)), id: \.0) { index, slice in
-                        PieSliceShape(
-                            startAngle: startAngle(for: index),
-                            endAngle: endAngle(for: index)
-                        )
-                        .fill(slice.color)
-                    }
-                    
-                    // Center hole
-                    Circle()
-                        .fill(AppColors.cardBackground)
-                        .frame(width: size * 0.5, height: size * 0.5)
-                    
-                    // Center text
-                    VStack(spacing: 2) {
-                        Text("\(Int(total))")
-                            .font(AppTypography.headline)
-                            .foregroundColor(AppColors.textPrimary)
-                        Text("days")
-                            .font(AppTypography.caption)
-                            .foregroundColor(AppColors.textSecondary)
-                    }
-                }
-                .frame(width: size, height: size)
-            }
-            .aspectRatio(1, contentMode: .fit)
-            
-            // Legend
-            if showLegend {
-                VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                    ForEach(slices) { slice in
-                        HStack(spacing: AppSpacing.sm) {
-                            Circle()
-                                .fill(slice.color)
-                                .frame(width: 12, height: 12)
-                            
-                            Text(slice.label)
-                                .font(AppTypography.caption)
-                                .foregroundColor(AppColors.textPrimary)
-                            
-                            Spacer()
-                            
-                            Text("\(Int(slice.value / total * 100))%")
-                                .font(AppTypography.caption)
-                                .foregroundColor(AppColors.textSecondary)
-                        }
-                    }
-                }
-                .frame(maxWidth: 120)
-            }
-        }
-        .frame(height: 160)
-    }
-    
-    private func startAngle(for index: Int) -> Angle {
-        let precedingValue = slices.prefix(index).map { $0.value }.reduce(0, +)
-        return .degrees(360 * precedingValue / total - 90)
-    }
-    
-    private func endAngle(for index: Int) -> Angle {
-        let cumulativeValue = slices.prefix(index + 1).map { $0.value }.reduce(0, +)
-        return .degrees(360 * cumulativeValue / total - 90)
-    }
-}
+        VStack(spacing: 6) {
+            ZStack {
+                // Background arc
+                Circle()
+                    .trim(from: 0, to: 0.75)
+                    .stroke(AppTheme.backgroundSecondary, style: StrokeStyle(lineWidth: 6, lineCap: .round))
+                    .rotationEffect(.degrees(135))
 
-struct PieSliceShape: Shape {
-    let startAngle: Angle
-    let endAngle: Angle
-    
-    func path(in rect: CGRect) -> Path {
-        var path = Path()
-        let center = CGPoint(x: rect.midX, y: rect.midY)
-        let radius = min(rect.width, rect.height) / 2
-        
-        path.move(to: center)
-        path.addArc(
-            center: center,
-            radius: radius,
-            startAngle: startAngle,
-            endAngle: endAngle,
-            clockwise: false
-        )
-        path.closeSubpath()
-        
-        return path
+                // Value arc
+                Circle()
+                    .trim(from: 0, to: CGFloat(fraction) * 0.75)
+                    .stroke(
+                        LinearGradient(
+                            gradient: Gradient(colors: [AppTheme.lowLight, AppTheme.amber, AppTheme.highLight]),
+                            startPoint: .leading, endPoint: .trailing
+                        ),
+                        style: StrokeStyle(lineWidth: 6, lineCap: .round)
+                    )
+                    .rotationEffect(.degrees(135))
+
+                VStack(spacing: 2) {
+                    Text(luxText)
+                        .font(.system(size: 16, weight: .bold, design: .rounded))
+                        .foregroundColor(AppTheme.luxColor(for: currentLux))
+                    Text("lux")
+                        .font(.system(size: 9))
+                        .foregroundColor(AppTheme.dimText)
+                }
+            }
+
+            Text(label)
+                .font(.caption2)
+                .foregroundColor(AppTheme.dimText)
+        }
+    }
+
+    private var luxText: String {
+        if currentLux >= 10000 { return String(format: "%.0fk", currentLux / 1000) }
+        if currentLux >= 100 { return String(format: "%.0f", currentLux) }
+        return String(format: "%.1f", currentLux)
     }
 }

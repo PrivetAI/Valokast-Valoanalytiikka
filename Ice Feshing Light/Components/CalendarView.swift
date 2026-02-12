@@ -1,185 +1,124 @@
 import SwiftUI
 
-struct CalendarView: View {
-    @Binding var selectedDate: Date
-    let records: [FishingRecord]
-    let onDateTap: (Date) -> Void
-    
-    @State private var currentMonth: Date = Date()
-    
-    private let calendar = Calendar.current
-    private let columns = Array(repeating: GridItem(.flexible(), spacing: 4), count: 7)
-    private let weekdays = ["S", "M", "T", "W", "T", "F", "S"]
-    
+// MARK: - Decorative Light Ray Shapes
+
+struct LightRaysView: View {
+    let rayCount: Int
+    let color: Color
+
+    init(rayCount: Int = 12, color: Color = AppTheme.amber) {
+        self.rayCount = rayCount
+        self.color = color
+    }
+
     var body: some View {
-        VStack(spacing: AppSpacing.md) {
-            // Month navigation
-            HStack {
-                Button(action: previousMonth) {
-                    BackIcon(size: 24, color: AppColors.primary)
-                }
-                
-                Spacer()
-                
-                Text(monthYearString)
-                    .font(AppTypography.headline)
-                    .foregroundColor(AppColors.textPrimary)
-                
-                Spacer()
-                
-                Button(action: nextMonth) {
-                    BackIcon(size: 24, color: AppColors.primary)
-                        .rotationEffect(.degrees(180))
-                }
-            }
-            .padding(.horizontal, AppSpacing.sm)
-            
-            // Weekday headers
-            LazyVGrid(columns: columns, spacing: 4) {
-                ForEach(weekdays, id: \.self) { day in
-                    Text(day)
-                        .font(AppTypography.caption)
-                        .foregroundColor(AppColors.textSecondary)
-                        .frame(height: 24)
-                }
-            }
-            
-            // Days grid
-            LazyVGrid(columns: columns, spacing: 4) {
-                ForEach(daysInMonth, id: \.self) { date in
-                    if let date = date {
-                        DayCell(
-                            date: date,
-                            record: getRecord(for: date),
-                            isSelected: calendar.isDate(date, inSameDayAs: selectedDate),
-                            isToday: calendar.isDateInToday(date)
-                        ) {
-                            selectedDate = date
-                            onDateTap(date)
-                        }
-                    } else {
-                        Color.clear
-                            .frame(height: 52)
-                    }
-                }
+        GeometryReader { geo in
+            let c = CGPoint(x: geo.size.width / 2, y: 0)
+            ForEach(0..<rayCount, id: \.self) { i in
+                let startAngle = Double(i) * (180.0 / Double(rayCount))
+                let endAngle = startAngle + (90.0 / Double(rayCount))
+                LightRayPath(center: c, startAngle: startAngle, endAngle: endAngle,
+                             length: max(geo.size.width, geo.size.height) * 1.2)
+                    .fill(color.opacity(0.03 + Double(i % 3) * 0.02))
             }
         }
-        .padding(AppSpacing.md)
-        .background(AppColors.cardBackground)
-        .cornerRadius(AppCorners.large)
-    }
-    
-    private var monthYearString: String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "MMMM yyyy"
-        return formatter.string(from: currentMonth)
-    }
-    
-    private var daysInMonth: [Date?] {
-        guard let monthInterval = calendar.dateInterval(of: .month, for: currentMonth),
-              let monthFirstWeek = calendar.dateInterval(of: .weekOfMonth, for: monthInterval.start) else {
-            return []
-        }
-        
-        var days: [Date?] = []
-        let firstDayOfMonth = monthInterval.start
-        let startOfFirstWeek = monthFirstWeek.start
-        
-        // Add empty cells for days before month starts
-        var currentDate = startOfFirstWeek
-        while currentDate < firstDayOfMonth {
-            days.append(nil)
-            currentDate = calendar.date(byAdding: .day, value: 1, to: currentDate) ?? currentDate
-        }
-        
-        // Add days of month
-        currentDate = firstDayOfMonth
-        while currentDate < monthInterval.end {
-            days.append(currentDate)
-            currentDate = calendar.date(byAdding: .day, value: 1, to: currentDate) ?? currentDate
-        }
-        
-        // Fill remaining cells in last week
-        while days.count % 7 != 0 {
-            days.append(nil)
-        }
-        
-        return days
-    }
-    
-    private func getRecord(for date: Date) -> FishingRecord? {
-        records.first { calendar.isDate($0.date, inSameDayAs: date) }
-    }
-    
-    private func previousMonth() {
-        currentMonth = calendar.date(byAdding: .month, value: -1, to: currentMonth) ?? currentMonth
-    }
-    
-    private func nextMonth() {
-        currentMonth = calendar.date(byAdding: .month, value: 1, to: currentMonth) ?? currentMonth
+        .allowsHitTesting(false)
     }
 }
 
-struct DayCell: View {
-    let date: Date
-    let record: FishingRecord?
-    let isSelected: Bool
-    let isToday: Bool
-    let action: () -> Void
-    
-    private let calendar = Calendar.current
-    
+struct LightRayPath: Shape {
+    let center: CGPoint
+    let startAngle: Double
+    let endAngle: Double
+    let length: CGFloat
+
+    func path(in rect: CGRect) -> Path {
+        var p = Path()
+        p.move(to: center)
+        let sa = Angle.degrees(startAngle)
+        let ea = Angle.degrees(endAngle)
+        p.addLine(to: CGPoint(
+            x: center.x + length * CGFloat(cos(sa.radians)),
+            y: center.y + length * CGFloat(sin(sa.radians))
+        ))
+        p.addLine(to: CGPoint(
+            x: center.x + length * CGFloat(cos(ea.radians)),
+            y: center.y + length * CGFloat(sin(ea.radians))
+        ))
+        p.closeSubpath()
+        return p
+    }
+}
+
+// Ice layer cross-section diagram
+struct IceCrossSectionView: View {
+    let iceThickness: Double
+    let snowCover: Double
+
     var body: some View {
-        Button(action: action) {
-            VStack(spacing: 2) {
-                Text("\(calendar.component(.day, from: date))")
-                    .font(AppTypography.callout)
-                    .foregroundColor(textColor)
-                
-                if let record = record {
-                    WeatherIcon(condition: record.weather, size: 16)
-                } else {
-                    Color.clear.frame(height: 16)
+        GeometryReader { geo in
+            let w = geo.size.width
+            let h = geo.size.height
+            let snowH = CGFloat(min(snowCover / 12.0, 0.3)) * h
+            let iceH = CGFloat(min(iceThickness / 36.0, 0.4)) * h
+
+            ZStack(alignment: .top) {
+                // Sky / light source
+                Rectangle()
+                    .fill(
+                        LinearGradient(
+                            gradient: Gradient(colors: [AppTheme.amberGlow.opacity(0.15), Color.clear]),
+                            startPoint: .top, endPoint: .center
+                        )
+                    )
+
+                VStack(spacing: 0) {
+                    // Air gap
+                    Spacer().frame(height: h * 0.15)
+
+                    // Snow layer
+                    if snowH > 0 {
+                        Rectangle()
+                            .fill(Color.white.opacity(0.25))
+                            .frame(height: snowH)
+                            .overlay(
+                                Text("Snow")
+                                    .font(.system(size: 9))
+                                    .foregroundColor(AppTheme.dimText)
+                            )
+                    }
+
+                    // Ice layer
+                    Rectangle()
+                        .fill(AppTheme.iceBlue.opacity(0.25))
+                        .frame(height: iceH)
+                        .overlay(
+                            Text("Ice")
+                                .font(.system(size: 9))
+                                .foregroundColor(AppTheme.iceBlue)
+                        )
+
+                    // Water
+                    Rectangle()
+                        .fill(
+                            LinearGradient(
+                                gradient: Gradient(colors: [AppTheme.deepBlue.opacity(0.4), AppTheme.backgroundPrimary]),
+                                startPoint: .top, endPoint: .bottom
+                            )
+                        )
+
                 }
+
+                // Light beam through layers
+                LightBeamShape()
+                    .fill(
+                        LinearGradient(
+                            gradient: Gradient(colors: [AppTheme.amberGlow.opacity(0.2), AppTheme.amber.opacity(0.02)]),
+                            startPoint: .top, endPoint: .bottom
+                        )
+                    )
+                    .frame(width: w * 0.4, height: h)
             }
-            .frame(height: 52)
-            .frame(maxWidth: .infinity)
-            .background(
-                RoundedRectangle(cornerRadius: AppCorners.small)
-                    .fill(backgroundColor)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: AppCorners.small)
-                    .stroke(isSelected ? AppColors.primary : Color.clear, lineWidth: 2)
-            )
-        }
-        .buttonStyle(PlainButtonStyle())
-    }
-    
-    private var backgroundColor: Color {
-        guard let record = record else {
-            return isToday ? AppColors.surface : Color.clear
-        }
-        
-        switch record.ratingCategory {
-        case .excellent:
-            return AppColors.excellent.opacity(0.3)
-        case .average:
-            return AppColors.average.opacity(0.3)
-        case .poor:
-            return AppColors.poor.opacity(0.3)
-        }
-    }
-    
-    private var textColor: Color {
-        if isSelected {
-            return AppColors.primary
-        } else if record != nil {
-            return AppColors.textPrimary
-        } else if isToday {
-            return AppColors.primary
-        } else {
-            return AppColors.textSecondary
         }
     }
 }

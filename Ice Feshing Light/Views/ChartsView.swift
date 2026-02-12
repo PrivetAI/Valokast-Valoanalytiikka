@@ -1,354 +1,190 @@
 import SwiftUI
 
-struct ChartsView: View {
-    @ObservedObject var dataService: DataService
-    
-    @State private var selectedTab = 0
-    
-    let onNavigateToComparison: () -> Void
-    let onNavigateBack: () -> Void
-    
-    var body: some View {
-        VStack(spacing: 0) {
-            // Header
-            HStack {
-                Button(action: onNavigateBack) {
-                    BackIcon(size: 24, color: AppColors.primary)
-                }
-                
-                Spacer()
-                
-                Text("Charts")
-                    .font(AppTypography.title)
-                    .foregroundColor(AppColors.textPrimary)
-                
-                Spacer()
-                
-                Button(action: onNavigateToComparison) {
-                    CompareIcon(size: 24, color: AppColors.primary)
-                }
-            }
-            .padding(.horizontal, AppSpacing.md)
-            .padding(.vertical, AppSpacing.md)
-            
-            // Tab selector
-            HStack(spacing: 0) {
-                ChartTabButton(title: "Trend", isSelected: selectedTab == 0) {
-                    selectedTab = 0
-                }
-                ChartTabButton(title: "Weather", isSelected: selectedTab == 1) {
-                    selectedTab = 1
-                }
-                ChartTabButton(title: "Time", isSelected: selectedTab == 2) {
-                    selectedTab = 2
-                }
-            }
-            .padding(.horizontal, AppSpacing.md)
-            
-            // Chart content
-            TabView(selection: $selectedTab) {
-                TrendChartTab(dataService: dataService)
-                    .tag(0)
-                
-                WeatherDistributionTab(dataService: dataService)
-                    .tag(1)
-                
-                TimeEfficiencyTab(dataService: dataService)
-                    .tag(2)
-            }
-            .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
-        }
-        .background(AppColors.background.ignoresSafeArea())
-    }
-}
+// MARK: - Best Times Calculator View
 
-struct ChartTabButton: View {
-    let title: String
-    let isSelected: Bool
-    let action: () -> Void
-    
-    var body: some View {
-        Button(action: action) {
-            VStack(spacing: AppSpacing.xs) {
-                Text(title)
-                    .font(AppTypography.callout)
-                    .foregroundColor(isSelected ? AppColors.primary : AppColors.textSecondary)
-                
-                Rectangle()
-                    .fill(isSelected ? AppColors.primary : Color.clear)
-                    .frame(height: 3)
+struct BestTimesView: View {
+    @ObservedObject var settings: SettingsService
+    @State private var latitude: Double = 45
+    @State private var selectedDate = Date()
+    @State private var iceThickness: Double = 12
+    @State private var snowCover: Double = 2
+    @State private var waterClarity: IceCondition.WaterClarity = .clear
+    @State private var targetDepth: Double = 15
+    @State private var selectedSpeciesID: String = "walleye"
+
+    private var condition: IceCondition {
+        IceCondition(iceThicknessInches: iceThickness, snowCoverInches: snowCover, waterClarity: waterClarity)
+    }
+
+    private var solar: SolarCalculator {
+        SolarCalculator(latitude: latitude, date: selectedDate)
+    }
+
+    private var selectedSpecies: FishSpecies? {
+        FishSpecies.allSpecies.first { $0.id == selectedSpeciesID }
+    }
+
+    // Compute best windows: hours where lux at target depth matches species preference
+    private var hourlyScores: [(label: String, score: Double)] {
+        guard let sp = selectedSpecies else { return [] }
+        let windows = [
+            ("5-7 AM", 5.0, 7.0),
+            ("7-9 AM", 7.0, 9.0),
+            ("9-11 AM", 9.0, 11.0),
+            ("11-1 PM", 11.0, 13.0),
+            ("1-3 PM", 13.0, 15.0),
+            ("3-5 PM", 15.0, 17.0),
+            ("5-7 PM", 17.0, 19.0),
+            ("7-9 PM", 19.0, 21.0),
+        ]
+
+        return windows.map { (label, startH, endH) in
+            var totalScore = 0.0
+            var samples = 0
+            var h = startH
+            while h < endH {
+                let surfLux = solar.surfaceLux(atHour: h)
+                let depthLux = condition.luxAtDepth(surfaceLux: surfLux, depthFeet: targetDepth)
+                // Score: how well does depth lux match species preference?
+                let midPref = (sp.preferredLuxMin + sp.preferredLuxMax) / 2
+                let range = max(1, sp.preferredLuxMax - sp.preferredLuxMin)
+                let distance = abs(depthLux - midPref)
+                let score = max(0, 1 - distance / (range * 2)) * 100
+                totalScore += score
+                samples += 1
+                h += 0.5
+            }
+            return (label, samples > 0 ? totalScore / Double(samples) : 0)
+        }
+    }
+
+    private var bestHours: [Int] {
+        guard let sp = selectedSpecies else { return [] }
+        var hours: [Int] = []
+        for h in 0...23 {
+            let surfLux = solar.surfaceLux(atHour: Double(h))
+            let depthLux = condition.luxAtDepth(surfaceLux: surfLux, depthFeet: targetDepth)
+            if depthLux >= sp.preferredLuxMin && depthLux <= sp.preferredLuxMax {
+                hours.append(h)
             }
         }
-        .frame(maxWidth: .infinity)
-        .buttonStyle(PlainButtonStyle())
+        return hours
     }
-}
 
-struct TrendChartTab: View {
-    @ObservedObject var dataService: DataService
-    
     var body: some View {
-        ScrollView {
-            VStack(spacing: AppSpacing.lg) {
-                CardView(title: "30-Day Catch Trend") {
-                    let records = dataService.getLast30DaysRecords()
-                    
-                    if records.isEmpty {
-                        EmptyChartMessage()
-                    } else {
-                        let dataPoints = records.map { record in
-                            (date: record.date, value: Double(record.catchRating), weather: record.weather)
-                        }
-                        
-                        LineChart(dataPoints: dataPoints)
+        ScrollView(.vertical, showsIndicators: false) {
+            VStack(spacing: 20) {
+                SectionHeader(title: "Best Times Calculator", icon: AnyView(
+                    ClockShape()
+                        .stroke(AppTheme.amber, lineWidth: 1.5)
+                ))
+
+                // Species selector
+                GlowCardView {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("Target Species")
+                            .font(.subheadline)
+                            .foregroundColor(AppTheme.dimText)
+                        SpeciesSelector(selectedID: $selectedSpeciesID, species: FishSpecies.allSpecies)
                     }
                 }
-                .padding(.horizontal, AppSpacing.md)
-                
-                // Summary stats
-                if !dataService.records.isEmpty {
-                    let records = dataService.getLast30DaysRecords()
-                    let avgRating = records.isEmpty ? 0 : Double(records.map { $0.catchRating }.reduce(0, +)) / Double(records.count)
-                    let trend = calculateTrend(records)
-                    
-                    HStack(spacing: AppSpacing.md) {
-                        StatCard(
-                            title: "30-Day Avg",
-                            value: String(format: "%.1f", avgRating),
-                            color: ratingColor(avgRating)
+
+                // Inputs
+                GlowCardView(glowColor: AppTheme.iceBlue) {
+                    VStack(spacing: 12) {
+                        GlowSlider(label: "Latitude", value: $latitude, range: 25...70, step: 0.5, unit: "N")
+                        DatePicker("Date", selection: $selectedDate, displayedComponents: .date)
+                            .datePickerStyle(CompactDatePickerStyle())
+                            .foregroundColor(AppTheme.bodyText)
+                            .accentColor(AppTheme.amber)
+                        GlowSlider(label: "Ice Thickness", value: $iceThickness, range: 2...48, step: 1, unit: "in", format: "%.0f")
+                        GlowSlider(label: "Snow Cover", value: $snowCover, range: 0...24, step: 0.5, unit: "in")
+                        ClarityPicker(clarity: $waterClarity)
+                        GlowSlider(label: "Target Depth", value: $targetDepth, range: 1...100, step: 1, unit: "ft", format: "%.0f")
+                    }
+                }
+
+                // Hourly light chart with best hours highlighted
+                GlowCardView(glowColor: AppTheme.amber) {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("Light at \(Int(targetDepth)) ft Throughout Day")
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                            .foregroundColor(AppTheme.warmWhite)
+
+                        let hourlyData = solar.hourlyProfile().map { (hour: $0.hour, lux: condition.luxAtDepth(surfaceLux: $0.surfaceLux, depthFeet: targetDepth)) }
+                        let maxLux = hourlyData.map(\.lux).max() ?? 1
+
+                        HourlyLightChart(
+                            dataPoints: hourlyData,
+                            maxLux: maxLux,
+                            highlightHours: bestHours
                         )
-                        
-                        StatCard(
-                            title: "Trend",
-                            value: trend >= 0 ? "+\(String(format: "%.1f", trend))" : String(format: "%.1f", trend),
-                            subtitle: trend >= 0 ? "Improving" : "Declining",
-                            color: trend >= 0 ? AppColors.excellent : AppColors.danger
-                        )
+                        .frame(height: 180)
                     }
-                    .padding(.horizontal, AppSpacing.md)
                 }
-                
-                Spacer(minLength: AppSpacing.xl)
-            }
-            .padding(.top, AppSpacing.lg)
-        }
-    }
-    
-    private func calculateTrend(_ records: [FishingRecord]) -> Double {
-        guard records.count >= 2 else { return 0 }
-        
-        let halfCount = records.count / 2
-        let firstHalf = records.prefix(halfCount)
-        let secondHalf = records.suffix(halfCount)
-        
-        let firstAvg = Double(firstHalf.map { $0.catchRating }.reduce(0, +)) / Double(firstHalf.count)
-        let secondAvg = Double(secondHalf.map { $0.catchRating }.reduce(0, +)) / Double(secondHalf.count)
-        
-        return secondAvg - firstAvg
-    }
-    
-    private func ratingColor(_ rating: Double) -> Color {
-        if rating >= 8 { return AppColors.excellent }
-        if rating >= 4 { return AppColors.average }
-        return AppColors.poor
-    }
-}
 
-struct WeatherDistributionTab: View {
-    @ObservedObject var dataService: DataService
-    
-    var body: some View {
-        ScrollView {
-            VStack(spacing: AppSpacing.lg) {
-                CardView(title: "Weather Distribution") {
-                    let weatherCounts = calculateWeatherCounts()
-                    
-                    if weatherCounts.isEmpty {
-                        EmptyChartMessage()
-                    } else {
-                        let slices = weatherCounts.map { (condition, count) in
-                            PieSlice(
-                                label: condition.displayName,
-                                value: Double(count),
-                                color: weatherColor(condition)
-                            )
-                        }
-                        
-                        PieChart(slices: slices)
-                    }
-                }
-                .padding(.horizontal, AppSpacing.md)
-                
-                // Weather breakdown
-                if !dataService.records.isEmpty {
-                    CardView(title: "Detailed Breakdown") {
-                        let stats = dataService.getWeatherStats()
-                        
-                        VStack(spacing: AppSpacing.sm) {
-                            ForEach(WeatherCondition.allCases) { condition in
-                                if let stat = stats[condition] {
-                                    HStack {
-                                        WeatherIcon(condition: condition, size: 24)
-                                        
-                                        Text(condition.displayName)
-                                            .font(AppTypography.callout)
-                                            .foregroundColor(AppColors.textPrimary)
-                                        
-                                        Spacer()
-                                        
-                                        VStack(alignment: .trailing, spacing: 2) {
-                                            Text("\(stat.daysCount) days")
-                                                .font(AppTypography.callout)
-                                                .foregroundColor(AppColors.textPrimary)
-                                            
-                                            Text("Avg: \(String(format: "%.1f", stat.averageRating))")
-                                                .font(AppTypography.caption)
-                                                .foregroundColor(AppColors.textSecondary)
-                                        }
-                                    }
-                                    .padding(.vertical, AppSpacing.xs)
-                                }
-                            }
-                        }
-                    }
-                    .padding(.horizontal, AppSpacing.md)
-                }
-                
-                Spacer(minLength: AppSpacing.xl)
-            }
-            .padding(.top, AppSpacing.lg)
-        }
-    }
-    
-    private func calculateWeatherCounts() -> [(WeatherCondition, Int)] {
-        var counts: [WeatherCondition: Int] = [:]
-        
-        for record in dataService.records {
-            counts[record.weather, default: 0] += 1
-        }
-        
-        return counts.sorted { $0.value > $1.value }
-    }
-    
-    private func weatherColor(_ condition: WeatherCondition) -> Color {
-        switch condition {
-        case .clear: return AppColors.sunny
-        case .cloudy: return AppColors.cloudy
-        case .overcast: return AppColors.overcast
-        case .snowing: return AppColors.snowing
-        }
-    }
-}
+                // Time windows scored
+                GlowCardView {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("Fishing Window Scores")
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                            .foregroundColor(AppTheme.warmWhite)
 
-struct TimeEfficiencyTab: View {
-    @ObservedObject var dataService: DataService
-    
-    var body: some View {
-        ScrollView {
-            VStack(spacing: AppSpacing.lg) {
-                CardView(title: "Avg Rating by Time") {
-                    let stats = dataService.getTimeStats()
-                    
-                    if stats.isEmpty {
-                        EmptyChartMessage()
-                    } else {
-                        let data = TimeOfDay.allCases.compactMap { time -> BarChartData? in
-                            guard let stat = stats[time] else { return nil }
-                            return BarChartData(
-                                label: time.displayName,
-                                value: stat.averageRating,
-                                color: timeColor(time)
-                            )
+                        if let sp = selectedSpecies {
+                            Text("Based on \(sp.name) light preference (\(String(format: "%.0f", sp.preferredLuxMin))-\(String(format: "%.0f", sp.preferredLuxMax)) lux)")
+                                .font(.caption)
+                                .foregroundColor(AppTheme.dimText)
                         }
-                        
-                        if !data.isEmpty {
-                            BarChart(data: data)
-                        }
-                    }
-                }
-                .padding(.horizontal, AppSpacing.md)
-                
-                // Detailed time stats
-                if !dataService.records.isEmpty {
-                    CardView(title: "Time Analysis") {
-                        let stats = dataService.getTimeStats()
-                        
-                        VStack(spacing: AppSpacing.sm) {
-                            ForEach(TimeOfDay.allCases.sorted { time1, time2 in
-                                (stats[time1]?.averageRating ?? 0) > (stats[time2]?.averageRating ?? 0)
-                            }) { time in
-                                if let stat = stats[time] {
-                                    HStack {
-                                        Circle()
-                                            .fill(timeColor(time))
-                                            .frame(width: 12, height: 12)
-                                        
-                                        VStack(alignment: .leading, spacing: 2) {
-                                            Text(time.displayName)
-                                                .font(AppTypography.callout)
-                                                .foregroundColor(AppColors.textPrimary)
-                                            
-                                            Text(time.timeRange)
-                                                .font(AppTypography.caption)
-                                                .foregroundColor(AppColors.textSecondary)
-                                        }
-                                        
-                                        Spacer()
-                                        
-                                        VStack(alignment: .trailing, spacing: 2) {
-                                            Text(String(format: "%.1f", stat.averageRating))
-                                                .font(AppTypography.headline)
-                                                .foregroundColor(ratingColor(stat.averageRating))
-                                            
-                                            Text("\(Int(stat.successRate))% excellent")
-                                                .font(AppTypography.caption)
-                                                .foregroundColor(AppColors.textSecondary)
-                                        }
-                                    }
-                                    .padding(.vertical, AppSpacing.xs)
-                                }
-                            }
-                        }
-                    }
-                    .padding(.horizontal, AppSpacing.md)
-                }
-                
-                Spacer(minLength: AppSpacing.xl)
-            }
-            .padding(.top, AppSpacing.lg)
-        }
-    }
-    
-    private func timeColor(_ time: TimeOfDay) -> Color {
-        switch time {
-        case .morning: return AppColors.morning
-        case .day: return AppColors.day
-        case .evening: return AppColors.evening
-        case .night: return AppColors.night
-        }
-    }
-    
-    private func ratingColor(_ rating: Double) -> Color {
-        if rating >= 8 { return AppColors.excellent }
-        if rating >= 4 { return AppColors.average }
-        return AppColors.poor
-    }
-}
 
-struct EmptyChartMessage: View {
-    var body: some View {
-        VStack(spacing: AppSpacing.md) {
-            ChartIcon(size: 48, color: AppColors.textSecondary.opacity(0.5))
-            
-            Text("No data to display")
-                .font(AppTypography.body)
-                .foregroundColor(AppColors.textSecondary)
-            
-            Text("Start recording your fishing trips to see charts")
-                .font(AppTypography.caption)
-                .foregroundColor(AppColors.textSecondary)
-                .multilineTextAlignment(.center)
+                        TimeWindowBarChart(windows: hourlyScores)
+                    }
+                }
+
+                // Daylight summary
+                GlowCardView(glowColor: AppTheme.coolBlue) {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Sunrise")
+                                .font(.caption)
+                                .foregroundColor(AppTheme.dimText)
+                            Text(formatHour(solar.sunriseHour))
+                                .font(.headline)
+                                .foregroundColor(AppTheme.amberGlow)
+                        }
+                        Spacer()
+                        VStack(spacing: 4) {
+                            Text("Daylight")
+                                .font(.caption)
+                                .foregroundColor(AppTheme.dimText)
+                            Text(String(format: "%.1f hrs", solar.daylightHours))
+                                .font(.headline)
+                                .foregroundColor(AppTheme.warmWhite)
+                        }
+                        Spacer()
+                        VStack(alignment: .trailing, spacing: 4) {
+                            Text("Sunset")
+                                .font(.caption)
+                                .foregroundColor(AppTheme.dimText)
+                            Text(formatHour(solar.sunsetHour))
+                                .font(.headline)
+                                .foregroundColor(AppTheme.lowLight)
+                        }
+                    }
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.bottom, 30)
         }
-        .frame(height: 180)
+        .onAppear { latitude = settings.latitude }
+    }
+
+    private func formatHour(_ h: Double) -> String {
+        let hr = Int(h)
+        let min = Int((h - Double(hr)) * 60)
+        let ampm = hr >= 12 ? "PM" : "AM"
+        let h12 = hr > 12 ? hr - 12 : (hr == 0 ? 12 : hr)
+        return String(format: "%d:%02d %@", h12, min, ampm)
     }
 }

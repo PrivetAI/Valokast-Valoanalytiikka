@@ -1,66 +1,44 @@
 import SwiftUI
 
+// MARK: - Number Input Field
+
 struct NumberInputField: View {
-    let title: String
-    @Binding var value: Int
-    var minValue: Int = 0
-    var maxValue: Int = 999
-    
+    let label: String
+    @Binding var value: Double
+    let range: ClosedRange<Double>
+    let step: Double
+    let unit: String
+    var format: String = "%.1f"
+
     var body: some View {
         HStack {
-            Text(title)
-                .font(AppTypography.body)
-                .foregroundColor(AppColors.textPrimary)
-            
+            Text(label)
+                .font(.subheadline)
+                .foregroundColor(AppTheme.dimText)
             Spacer()
-            
-            HStack(spacing: 0) {
-                // Minus button
-                Button(action: {
-                    if value > minValue {
-                        value -= 1
-                    }
-                }) {
-                    ZStack {
-                        RoundedRectangle(cornerRadius: AppCorners.small)
-                            .fill(AppColors.surface)
-                            .frame(width: 44, height: 44)
-                        
-                        Rectangle()
-                            .fill(AppColors.textSecondary)
-                            .frame(width: 16, height: 3)
-                    }
-                }
-                .buttonStyle(PlainButtonStyle())
-                
-                // Value display
-                Text("\(value)")
-                    .font(AppTypography.headline)
-                    .foregroundColor(AppColors.textPrimary)
-                    .frame(width: 60)
-                    .multilineTextAlignment(.center)
-                
-                // Plus button
-                Button(action: {
-                    if value < maxValue {
-                        value += 1
-                    }
-                }) {
-                    ZStack {
-                        RoundedRectangle(cornerRadius: AppCorners.small)
-                            .fill(AppColors.primary)
-                            .frame(width: 44, height: 44)
-                        
-                        PlusIcon(size: 18, color: .white)
-                    }
-                }
-                .buttonStyle(PlainButtonStyle())
+            Button(action: { if value - step >= range.lowerBound { value -= step } }) {
+                Text("-")
+                    .font(.title3)
+                    .fontWeight(.bold)
+                    .foregroundColor(AppTheme.amber)
+                    .frame(width: 32, height: 32)
+                    .background(AppTheme.backgroundSecondary)
+                    .cornerRadius(8)
+            }
+            Text(String(format: format, value) + " " + unit)
+                .font(.subheadline)
+                .fontWeight(.medium)
+                .foregroundColor(AppTheme.warmWhite)
+                .frame(minWidth: 60)
+            Button(action: { if value + step <= range.upperBound { value += step } }) {
+                Text("+")
+                    .font(.title3)
+                    .fontWeight(.bold)
+                    .foregroundColor(AppTheme.amber)
+                    .frame(width: 32, height: 32)
+                    .background(AppTheme.backgroundSecondary)
+                    .cornerRadius(8)
             }
         }
-        .padding(AppSpacing.md)
-        .background(
-            RoundedRectangle(cornerRadius: AppCorners.medium)
-                .fill(AppColors.cardBackground)
-        )
     }
 }

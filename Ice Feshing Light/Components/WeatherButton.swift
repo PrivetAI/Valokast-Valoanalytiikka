@@ -1,56 +1,67 @@
 import SwiftUI
 
-struct WeatherButton: View {
-    let condition: WeatherCondition
-    let isSelected: Bool
-    let action: () -> Void
-    
+// MARK: - Glow Slider Component
+
+struct GlowSlider: View {
+    let label: String
+    @Binding var value: Double
+    let range: ClosedRange<Double>
+    let step: Double
+    let unit: String
+    var format: String = "%.1f"
+
     var body: some View {
-        Button(action: action) {
-            VStack(spacing: AppSpacing.sm) {
-                ZStack {
-                    Circle()
-                        .fill(isSelected ? backgroundColor : AppColors.surface)
-                        .frame(width: 64, height: 64)
-                    
-                    WeatherIcon(condition: condition, size: 36)
-                }
-                
-                Text(condition.displayName)
-                    .font(AppTypography.callout)
-                    .foregroundColor(isSelected ? AppColors.primary : AppColors.textSecondary)
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                Text(label)
+                    .font(.subheadline)
+                    .foregroundColor(AppTheme.dimText)
+                Spacer()
+                Text(String(format: format, value) + " " + unit)
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+                    .foregroundColor(AppTheme.amber)
             }
-        }
-        .buttonStyle(PlainButtonStyle())
-    }
-    
-    private var backgroundColor: Color {
-        switch condition {
-        case .clear:
-            return AppColors.sunny.opacity(0.2)
-        case .cloudy:
-            return AppColors.cloudy.opacity(0.3)
-        case .overcast:
-            return AppColors.overcast.opacity(0.3)
-        case .snowing:
-            return AppColors.snowing.opacity(0.4)
+            Slider(value: $value, in: range, step: step)
+                .accentColor(AppTheme.amber)
         }
     }
 }
 
-struct WeatherButtonGroup: View {
-    @Binding var selected: WeatherCondition
-    
+// MARK: - Clarity Picker
+
+struct ClarityPicker: View {
+    @Binding var clarity: IceCondition.WaterClarity
+
     var body: some View {
-        HStack(spacing: AppSpacing.md) {
-            ForEach(WeatherCondition.allCases) { condition in
-                WeatherButton(
-                    condition: condition,
-                    isSelected: selected == condition
-                ) {
-                    selected = condition
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Water Clarity")
+                .font(.subheadline)
+                .foregroundColor(AppTheme.dimText)
+            HStack(spacing: 6) {
+                ForEach(IceCondition.WaterClarity.allCases, id: \.self) { option in
+                    Button(action: { clarity = option }) {
+                        Text(shortLabel(option))
+                            .font(.caption2)
+                            .fontWeight(.medium)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 6)
+                            .foregroundColor(clarity == option ? AppTheme.backgroundPrimary : AppTheme.bodyText)
+                            .background(clarity == option ? AppTheme.amber : AppTheme.backgroundSecondary)
+                            .cornerRadius(8)
+                    }
                 }
             }
+        }
+    }
+
+    private func shortLabel(_ c: IceCondition.WaterClarity) -> String {
+        switch c {
+        case .crystal: return "Crystal"
+        case .clear: return "Clear"
+        case .moderate: return "Mod"
+        case .stained: return "Stain"
+        case .murky: return "Murky"
         }
     }
 }

@@ -1,113 +1,83 @@
 import SwiftUI
 
-struct LineChart: View {
-    let dataPoints: [(date: Date, value: Double, weather: WeatherCondition)]
-    var lineColor: Color = AppColors.primary
-    var showWeatherIcons: Bool = true
-    
+// MARK: - Hourly Light Profile Chart
+
+struct HourlyLightChart: View {
+    let dataPoints: [(hour: Int, lux: Double)]
+    let maxLux: Double
+    var highlightHours: [Int] = []
+
     var body: some View {
-        GeometryReader { geometry in
-            let width = geometry.size.width
-            let height = geometry.size.height
-            let maxValue: Double = 10
-            let minValue: Double = 0
-            
-            ZStack {
-                // Grid lines
-                VStack(spacing: 0) {
-                    ForEach(0..<5) { i in
-                        Divider()
-                            .background(AppColors.surface)
-                        if i < 4 {
-                            Spacer()
-                        }
+        GeometryReader { geo in
+            let w = geo.size.width
+            let h = geo.size.height
+            let leftPad: CGFloat = 36
+            let bottomPad: CGFloat = 20
+            let topPad: CGFloat = 8
+            let plotW = w - leftPad - 8
+            let plotH = h - topPad - bottomPad
+            let logMax = log10(max(10, maxLux))
+
+            ZStack(alignment: .topLeading) {
+                // Highlight zones
+                ForEach(highlightHours, id: \.self) { hr in
+                    if let idx = dataPoints.firstIndex(where: { $0.hour == hr }) {
+                        let barW = plotW / 24
+                        Rectangle()
+                            .fill(AppTheme.amber.opacity(0.1))
+                            .frame(width: barW, height: plotH)
+                            .offset(x: leftPad + barW * CGFloat(idx), y: topPad)
                     }
                 }
-                .padding(.bottom, showWeatherIcons ? 30 : 0)
-                
-                // Y-axis labels
-                VStack {
-                    Text("10")
-                    Spacer()
-                    Text("5")
-                    Spacer()
-                    Text("0")
-                }
-                .font(AppTypography.caption)
-                .foregroundColor(AppColors.textSecondary)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.bottom, showWeatherIcons ? 30 : 0)
-                
-                if !dataPoints.isEmpty {
-                    // Line and fill
-                    let points = calculatePoints(width: width - 30, height: height - (showWeatherIcons ? 50 : 20), maxValue: maxValue, minValue: minValue)
-                    
-                    // Fill gradient
-                    Path { path in
-                        guard points.count > 1 else { return }
-                        path.move(to: CGPoint(x: points[0].x + 30, y: height - (showWeatherIcons ? 50 : 20)))
-                        path.addLine(to: CGPoint(x: points[0].x + 30, y: points[0].y))
-                        
-                        for point in points.dropFirst() {
-                            path.addLine(to: CGPoint(x: point.x + 30, y: point.y))
-                        }
-                        
-                        path.addLine(to: CGPoint(x: points.last!.x + 30, y: height - (showWeatherIcons ? 50 : 20)))
-                        path.closeSubpath()
+
+                // Curve fill
+                Path { path in
+                    for (i, dp) in dataPoints.enumerated() {
+                        let x = leftPad + plotW * CGFloat(dp.hour) / 23.0
+                        let logVal = log10(max(1, dp.lux))
+                        let y = topPad + plotH * (1 - CGFloat(logVal / logMax))
+                        if i == 0 { path.move(to: CGPoint(x: x, y: y)) }
+                        else { path.addLine(to: CGPoint(x: x, y: y)) }
                     }
-                    .fill(
-                        LinearGradient(
-                            gradient: Gradient(colors: [lineColor.opacity(0.3), lineColor.opacity(0.05)]),
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
+                    // Close for fill
+                    if let last = dataPoints.last {
+                        let lastX = leftPad + plotW * CGFloat(last.hour) / 23.0
+                        path.addLine(to: CGPoint(x: lastX, y: topPad + plotH))
+                    }
+                    if let first = dataPoints.first {
+                        let firstX = leftPad + plotW * CGFloat(first.hour) / 23.0
+                        path.addLine(to: CGPoint(x: firstX, y: topPad + plotH))
+                    }
+                    path.closeSubpath()
+                }
+                .fill(
+                    LinearGradient(
+                        gradient: Gradient(colors: [AppTheme.amber.opacity(0.25), AppTheme.amber.opacity(0.02)]),
+                        startPoint: .top, endPoint: .bottom
                     )
-                    
-                    // Line
-                    Path { path in
-                        guard points.count > 1 else { return }
-                        path.move(to: CGPoint(x: points[0].x + 30, y: points[0].y))
-                        
-                        for point in points.dropFirst() {
-                            path.addLine(to: CGPoint(x: point.x + 30, y: point.y))
-                        }
-                    }
-                    .stroke(lineColor, style: StrokeStyle(lineWidth: 2.5, lineCap: .round, lineJoin: .round))
-                    
-                    // Data points and weather icons
-                    ForEach(Array(zip(points.indices, points)), id: \.0) { index, point in
-                        VStack(spacing: 2) {
-                            Circle()
-                                .fill(lineColor)
-                                .frame(width: 8, height: 8)
-                            
-                            if showWeatherIcons && index < dataPoints.count {
-                                WeatherIcon(condition: dataPoints[index].weather, size: 16)
-                            }
-                        }
-                        .position(x: point.x + 30, y: point.y + (showWeatherIcons ? 12 : 0))
+                )
+
+                // Line
+                Path { path in
+                    for (i, dp) in dataPoints.enumerated() {
+                        let x = leftPad + plotW * CGFloat(dp.hour) / 23.0
+                        let logVal = log10(max(1, dp.lux))
+                        let y = topPad + plotH * (1 - CGFloat(logVal / logMax))
+                        if i == 0 { path.move(to: CGPoint(x: x, y: y)) }
+                        else { path.addLine(to: CGPoint(x: x, y: y)) }
                     }
                 }
+                .stroke(AppTheme.amber, style: StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round))
+
+                // X-axis labels
+                ForEach([0, 6, 12, 18, 23], id: \.self) { hr in
+                    let x = leftPad + plotW * CGFloat(hr) / 23.0
+                    Text("\(hr)h")
+                        .font(.system(size: 9))
+                        .foregroundColor(AppTheme.dimText)
+                        .position(x: x, y: h - 6)
+                }
             }
-        }
-        .frame(height: 200)
-    }
-    
-    private func calculatePoints(width: CGFloat, height: CGFloat, maxValue: Double, minValue: Double) -> [CGPoint] {
-        guard dataPoints.count > 1 else {
-            if let first = dataPoints.first {
-                let y = height - CGFloat((first.value - minValue) / (maxValue - minValue)) * height
-                return [CGPoint(x: width / 2, y: y)]
-            }
-            return []
-        }
-        
-        let stepX = width / CGFloat(dataPoints.count - 1)
-        
-        return dataPoints.enumerated().map { index, point in
-            let x = CGFloat(index) * stepX
-            let y = height - CGFloat((point.value - minValue) / (maxValue - minValue)) * height
-            return CGPoint(x: x, y: y)
         }
     }
 }

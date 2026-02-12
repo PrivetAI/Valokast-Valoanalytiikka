@@ -7,34 +7,34 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		001 /* Ice_Feshing_LightApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 101; };
-		002 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 102; };
-		003 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 103; };
-		004 /* FishingRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = 104; };
-		005 /* WeatherCondition.swift in Sources */ = {isa = PBXBuildFile; fileRef = 105; };
-		006 /* TimeOfDay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 106; };
-		007 /* FishType.swift in Sources */ = {isa = PBXBuildFile; fileRef = 107; };
-		008 /* DataService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 108; };
-		009 /* SettingsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 109; };
-		010 /* WeatherIcons.swift in Sources */ = {isa = PBXBuildFile; fileRef = 110; };
-		011 /* UIIcons.swift in Sources */ = {isa = PBXBuildFile; fileRef = 111; };
-		012 /* WeatherButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 112; };
-		013 /* TimeOfDaySelector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 113; };
-		014 /* FishTypeSelector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 114; };
-		015 /* CatchRatingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 115; };
-		016 /* NumberInputField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 116; };
-		017 /* CalendarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 117; };
-		018 /* LineChart.swift in Sources */ = {isa = PBXBuildFile; fileRef = 118; };
-		019 /* BarChart.swift in Sources */ = {isa = PBXBuildFile; fileRef = 119; };
-		020 /* PieChart.swift in Sources */ = {isa = PBXBuildFile; fileRef = 120; };
-		021 /* CardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 121; };
-		022 /* QuickRecordView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 122; };
-		023 /* CalendarHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 123; };
-		024 /* StatisticsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 124; };
-		025 /* ChartsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 125; };
-		026 /* ComparisonView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 126; };
-		027 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 127; };
-		028 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 128; };
+		001 /* Ice_Feshing_LightApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 101 /* Ice_Feshing_LightApp.swift */; };
+		002 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 102 /* ContentView.swift */; };
+		003 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 103 /* Theme.swift */; };
+		004 /* FishingRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = 104 /* FishingRecord.swift */; };
+		005 /* WeatherCondition.swift in Sources */ = {isa = PBXBuildFile; fileRef = 105 /* WeatherCondition.swift */; };
+		006 /* TimeOfDay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 106 /* TimeOfDay.swift */; };
+		007 /* FishType.swift in Sources */ = {isa = PBXBuildFile; fileRef = 107 /* FishType.swift */; };
+		008 /* DataService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 108 /* DataService.swift */; };
+		009 /* SettingsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 109 /* SettingsService.swift */; };
+		010 /* WeatherIcons.swift in Sources */ = {isa = PBXBuildFile; fileRef = 110 /* WeatherIcons.swift */; };
+		011 /* UIIcons.swift in Sources */ = {isa = PBXBuildFile; fileRef = 111 /* UIIcons.swift */; };
+		012 /* WeatherButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 112 /* WeatherButton.swift */; };
+		013 /* TimeOfDaySelector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 113 /* TimeOfDaySelector.swift */; };
+		014 /* FishTypeSelector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 114 /* FishTypeSelector.swift */; };
+		015 /* CatchRatingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 115 /* CatchRatingView.swift */; };
+		016 /* NumberInputField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 116 /* NumberInputField.swift */; };
+		017 /* CalendarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 117 /* CalendarView.swift */; };
+		018 /* LineChart.swift in Sources */ = {isa = PBXBuildFile; fileRef = 118 /* LineChart.swift */; };
+		019 /* BarChart.swift in Sources */ = {isa = PBXBuildFile; fileRef = 119 /* BarChart.swift */; };
+		020 /* PieChart.swift in Sources */ = {isa = PBXBuildFile; fileRef = 120 /* PieChart.swift */; };
+		021 /* CardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 121 /* CardView.swift */; };
+		022 /* QuickRecordView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 122 /* QuickRecordView.swift */; };
+		023 /* CalendarHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 123 /* CalendarHistoryView.swift */; };
+		024 /* StatisticsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 124 /* StatisticsView.swift */; };
+		025 /* ChartsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 125 /* ChartsView.swift */; };
+		026 /* ComparisonView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 126 /* ComparisonView.swift */; };
+		027 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 127 /* SettingsView.swift */; };
+		028 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 128 /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -192,7 +192,7 @@
 /* Begin PBXNativeTarget section */
 		400 /* Ice Feshing Light */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 500;
+			buildConfigurationList = 500 /* Build configuration list for PBXNativeTarget "Ice Feshing Light" */;
 			buildPhases = (
 				401 /* Sources */,
 				200 /* Frameworks */,
@@ -222,7 +222,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 601;
+			buildConfigurationList = 601 /* Build configuration list for PBXProject "Ice Feshing Light" */;
 			compatibilityVersion = "Xcode 13.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -408,7 +408,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_STYLE = Automatic;
+				CODE_SIGN_STYLE = Manual;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
 				GENERATE_INFOPLIST_FILE = YES;
@@ -426,11 +426,14 @@
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.app.Ice-Feshing-Light";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Debug;
 		};
@@ -439,7 +442,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_STYLE = Automatic;
+				CODE_SIGN_STYLE = Manual;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
 				GENERATE_INFOPLIST_FILE = YES;
@@ -457,11 +460,14 @@
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.app.Ice-Feshing-Light";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Release;
 		};

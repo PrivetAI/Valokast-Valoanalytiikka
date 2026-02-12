@@ -1,351 +1,142 @@
 import SwiftUI
 
-// MARK: - Calendar Icon
-struct CalendarIcon: View {
-    var size: CGFloat = 24
-    var color: Color = AppColors.textPrimary
-    
-    var body: some View {
-        ZStack {
-            // Calendar body
-            RoundedRectangle(cornerRadius: size * 0.15)
-                .stroke(color, lineWidth: 1.5)
-                .frame(width: size * 0.85, height: size * 0.85)
-                .offset(y: size * 0.05)
-            
-            // Top bar
-            Rectangle()
-                .fill(color)
-                .frame(width: size * 0.85, height: size * 0.18)
-                .offset(y: -size * 0.28)
-            
-            // Rings
-            HStack(spacing: size * 0.25) {
-                RoundedRectangle(cornerRadius: 1)
-                    .fill(color)
-                    .frame(width: size * 0.08, height: size * 0.2)
-                RoundedRectangle(cornerRadius: 1)
-                    .fill(color)
-                    .frame(width: size * 0.08, height: size * 0.2)
-            }
-            .offset(y: -size * 0.38)
-            
-            // Grid dots
-            VStack(spacing: size * 0.1) {
-                HStack(spacing: size * 0.15) {
-                    Circle().fill(color).frame(width: size * 0.08, height: size * 0.08)
-                    Circle().fill(color).frame(width: size * 0.08, height: size * 0.08)
-                    Circle().fill(color).frame(width: size * 0.08, height: size * 0.08)
-                }
-                HStack(spacing: size * 0.15) {
-                    Circle().fill(color).frame(width: size * 0.08, height: size * 0.08)
-                    Circle().fill(color).frame(width: size * 0.08, height: size * 0.08)
-                    Circle().fill(color).frame(width: size * 0.08, height: size * 0.08)
-                }
-            }
-            .offset(y: size * 0.15)
-        }
-        .frame(width: size, height: size)
+// MARK: - Custom UI Shape Icons (no SF Symbols)
+
+struct FishShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        var p = Path()
+        let w = rect.width
+        let h = rect.height
+        // Body
+        p.move(to: CGPoint(x: w * 0.15, y: h * 0.5))
+        p.addCurve(to: CGPoint(x: w * 0.75, y: h * 0.5),
+                    control1: CGPoint(x: w * 0.35, y: h * 0.1),
+                    control2: CGPoint(x: w * 0.6, y: h * 0.15))
+        // Tail top
+        p.addLine(to: CGPoint(x: w * 0.95, y: h * 0.2))
+        p.addLine(to: CGPoint(x: w * 0.85, y: h * 0.5))
+        p.addLine(to: CGPoint(x: w * 0.95, y: h * 0.8))
+        p.addLine(to: CGPoint(x: w * 0.75, y: h * 0.5))
+        // Bottom curve
+        p.addCurve(to: CGPoint(x: w * 0.15, y: h * 0.5),
+                    control1: CGPoint(x: w * 0.6, y: h * 0.85),
+                    control2: CGPoint(x: w * 0.35, y: h * 0.9))
+        p.closeSubpath()
+        // Eye
+        p.addEllipse(in: CGRect(x: w * 0.28, y: h * 0.38, width: w * 0.08, height: h * 0.1))
+        return p
     }
 }
 
-// MARK: - Chart Icon
-struct ChartIcon: View {
-    var size: CGFloat = 24
-    var color: Color = AppColors.textPrimary
-    
-    var body: some View {
-        ZStack {
-            // Bars
-            HStack(alignment: .bottom, spacing: size * 0.1) {
-                RoundedRectangle(cornerRadius: 2)
-                    .fill(color)
-                    .frame(width: size * 0.18, height: size * 0.4)
-                RoundedRectangle(cornerRadius: 2)
-                    .fill(color)
-                    .frame(width: size * 0.18, height: size * 0.7)
-                RoundedRectangle(cornerRadius: 2)
-                    .fill(color)
-                    .frame(width: size * 0.18, height: size * 0.5)
-                RoundedRectangle(cornerRadius: 2)
-                    .fill(color)
-                    .frame(width: size * 0.18, height: size * 0.85)
-            }
+struct ChartLineShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        var p = Path()
+        let points: [(CGFloat, CGFloat)] = [
+            (0.05, 0.8), (0.25, 0.4), (0.45, 0.6), (0.65, 0.2), (0.85, 0.5), (0.95, 0.3)
+        ]
+        for (i, pt) in points.enumerated() {
+            let point = CGPoint(x: rect.width * pt.0, y: rect.height * pt.1)
+            if i == 0 { p.move(to: point) } else { p.addLine(to: point) }
         }
-        .frame(width: size, height: size)
+        return p
     }
 }
 
-// MARK: - Settings Icon (Gear)
-struct SettingsIcon: View {
-    var size: CGFloat = 24
-    var color: Color = AppColors.textPrimary
-    
-    var body: some View {
-        ZStack {
-            // Outer teeth
-            ForEach(0..<8) { i in
-                RoundedRectangle(cornerRadius: 2)
-                    .fill(color)
-                    .frame(width: size * 0.15, height: size * 0.25)
-                    .offset(y: -size * 0.38)
-                    .rotationEffect(.degrees(Double(i) * 45))
-            }
-            
-            // Outer ring
-            Circle()
-                .fill(color)
-                .frame(width: size * 0.6, height: size * 0.6)
-            
-            // Inner hole
-            Circle()
-                .fill(Color.white)
-                .frame(width: size * 0.25, height: size * 0.25)
-        }
-        .frame(width: size, height: size)
+struct BookShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        var p = Path()
+        let w = rect.width
+        let h = rect.height
+        // Left page
+        p.move(to: CGPoint(x: w * 0.5, y: h * 0.15))
+        p.addLine(to: CGPoint(x: w * 0.1, y: h * 0.1))
+        p.addLine(to: CGPoint(x: w * 0.1, y: h * 0.85))
+        p.addLine(to: CGPoint(x: w * 0.5, y: h * 0.9))
+        // Right page
+        p.addLine(to: CGPoint(x: w * 0.9, y: h * 0.85))
+        p.addLine(to: CGPoint(x: w * 0.9, y: h * 0.1))
+        p.addLine(to: CGPoint(x: w * 0.5, y: h * 0.15))
+        // Spine
+        p.move(to: CGPoint(x: w * 0.5, y: h * 0.15))
+        p.addLine(to: CGPoint(x: w * 0.5, y: h * 0.9))
+        return p
     }
 }
 
-// MARK: - Save Icon (Checkmark in circle)
-struct SaveIcon: View {
-    var size: CGFloat = 24
-    var color: Color = AppColors.textLight
-    
-    var body: some View {
-        ZStack {
-            // Checkmark
-            Path { path in
-                let w = size
-                path.move(to: CGPoint(x: w * 0.25, y: w * 0.5))
-                path.addLine(to: CGPoint(x: w * 0.42, y: w * 0.68))
-                path.addLine(to: CGPoint(x: w * 0.75, y: w * 0.32))
-            }
-            .stroke(color, style: StrokeStyle(lineWidth: size * 0.1, lineCap: .round, lineJoin: .round))
-        }
-        .frame(width: size, height: size)
+struct ClockShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        var p = Path()
+        let c = CGPoint(x: rect.midX, y: rect.midY)
+        let r = min(rect.width, rect.height) * 0.42
+        p.addEllipse(in: CGRect(x: c.x - r, y: c.y - r, width: r * 2, height: r * 2))
+        // Hour hand
+        p.move(to: c)
+        p.addLine(to: CGPoint(x: c.x + r * 0.3, y: c.y - r * 0.4))
+        // Minute hand
+        p.move(to: c)
+        p.addLine(to: CGPoint(x: c.x, y: c.y - r * 0.65))
+        return p
     }
 }
 
-// MARK: - Back Icon (Arrow)
-struct BackIcon: View {
-    var size: CGFloat = 24
-    var color: Color = AppColors.textPrimary
-    
-    var body: some View {
-        Path { path in
-            let w = size
-            path.move(to: CGPoint(x: w * 0.6, y: w * 0.2))
-            path.addLine(to: CGPoint(x: w * 0.3, y: w * 0.5))
-            path.addLine(to: CGPoint(x: w * 0.6, y: w * 0.8))
+struct JournalShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        var p = Path()
+        let w = rect.width
+        let h = rect.height
+        // Notebook outline
+        p.addRoundedRect(in: CGRect(x: w * 0.15, y: h * 0.08, width: w * 0.7, height: h * 0.84), cornerSize: CGSize(width: 4, height: 4))
+        // Lines
+        for i in 1...4 {
+            let y = h * (0.2 + CGFloat(i) * 0.13)
+            p.move(to: CGPoint(x: w * 0.25, y: y))
+            p.addLine(to: CGPoint(x: w * 0.75, y: y))
         }
-        .stroke(color, style: StrokeStyle(lineWidth: size * 0.1, lineCap: .round, lineJoin: .round))
-        .frame(width: size, height: size)
+        // Binding
+        p.move(to: CGPoint(x: w * 0.15, y: h * 0.08))
+        p.addLine(to: CGPoint(x: w * 0.15, y: h * 0.92))
+        return p
     }
 }
 
-// MARK: - Plus Icon
-struct PlusIcon: View {
-    var size: CGFloat = 24
-    var color: Color = AppColors.textPrimary
-    
-    var body: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 2)
-                .fill(color)
-                .frame(width: size * 0.6, height: size * 0.12)
-            RoundedRectangle(cornerRadius: 2)
-                .fill(color)
-                .frame(width: size * 0.12, height: size * 0.6)
+struct GearShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        var p = Path()
+        let c = CGPoint(x: rect.midX, y: rect.midY)
+        let outerR = min(rect.width, rect.height) * 0.42
+        let innerR = outerR * 0.7
+        let teeth = 8
+        for i in 0..<(teeth * 2) {
+            let angle = CGFloat(i) * .pi / CGFloat(teeth)
+            let r = i % 2 == 0 ? outerR : innerR
+            let pt = CGPoint(x: c.x + cos(angle) * r, y: c.y + sin(angle) * r)
+            if i == 0 { p.move(to: pt) } else { p.addLine(to: pt) }
         }
-        .frame(width: size, height: size)
+        p.closeSubpath()
+        // Center hole
+        let holeR = outerR * 0.25
+        p.addEllipse(in: CGRect(x: c.x - holeR, y: c.y - holeR, width: holeR * 2, height: holeR * 2))
+        return p
     }
 }
 
-// MARK: - Delete Icon (Trash)
-struct DeleteIcon: View {
-    var size: CGFloat = 24
-    var color: Color = AppColors.danger
-    
-    var body: some View {
-        ZStack {
-            // Lid
-            RoundedRectangle(cornerRadius: 1)
-                .fill(color)
-                .frame(width: size * 0.7, height: size * 0.08)
-                .offset(y: -size * 0.32)
-            
-            // Handle
-            RoundedRectangle(cornerRadius: 2)
-                .stroke(color, lineWidth: 1.5)
-                .frame(width: size * 0.25, height: size * 0.12)
-                .offset(y: -size * 0.4)
-            
-            // Body
-            Path { path in
-                let w = size
-                path.move(to: CGPoint(x: w * 0.2, y: w * 0.25))
-                path.addLine(to: CGPoint(x: w * 0.25, y: w * 0.85))
-                path.addLine(to: CGPoint(x: w * 0.75, y: w * 0.85))
-                path.addLine(to: CGPoint(x: w * 0.8, y: w * 0.25))
-                path.closeSubpath()
-            }
-            .stroke(color, lineWidth: 1.5)
-            
-            // Lines
-            VStack(spacing: size * 0.12) {
-                RoundedRectangle(cornerRadius: 0.5)
-                    .fill(color)
-                    .frame(width: size * 0.06, height: size * 0.35)
-            }
-            .offset(y: size * 0.12)
-        }
-        .frame(width: size, height: size)
-    }
-}
-
-// MARK: - Compare Icon
-struct CompareIcon: View {
-    var size: CGFloat = 24
-    var color: Color = AppColors.textPrimary
-    
-    var body: some View {
-        ZStack {
-            // Left arrow
-            Path { path in
-                let w = size
-                path.move(to: CGPoint(x: w * 0.35, y: w * 0.25))
-                path.addLine(to: CGPoint(x: w * 0.15, y: w * 0.4))
-                path.addLine(to: CGPoint(x: w * 0.35, y: w * 0.55))
-            }
-            .stroke(color, style: StrokeStyle(lineWidth: size * 0.08, lineCap: .round, lineJoin: .round))
-            
-            // Right arrow
-            Path { path in
-                let w = size
-                path.move(to: CGPoint(x: w * 0.65, y: w * 0.45))
-                path.addLine(to: CGPoint(x: w * 0.85, y: w * 0.6))
-                path.addLine(to: CGPoint(x: w * 0.65, y: w * 0.75))
-            }
-            .stroke(color, style: StrokeStyle(lineWidth: size * 0.08, lineCap: .round, lineJoin: .round))
-            
-            // Lines
-            RoundedRectangle(cornerRadius: 1)
-                .fill(color)
-                .frame(width: size * 0.5, height: size * 0.06)
-                .offset(y: -size * 0.1)
-            
-            RoundedRectangle(cornerRadius: 1)
-                .fill(color)
-                .frame(width: size * 0.5, height: size * 0.06)
-                .offset(y: size * 0.1)
-        }
-        .frame(width: size, height: size)
-    }
-}
-
-// MARK: - Fish Icon
-struct FishIcon: View {
-    var size: CGFloat = 24
-    var color: Color = AppColors.primary
-    
-    var body: some View {
-        ZStack {
-            // Body
-            Ellipse()
-                .fill(color)
-                .frame(width: size * 0.7, height: size * 0.4)
-            
-            // Tail
-            Path { path in
-                let w = size
-                path.move(to: CGPoint(x: w * 0.15, y: w * 0.5))
-                path.addLine(to: CGPoint(x: w * 0.0, y: w * 0.3))
-                path.addLine(to: CGPoint(x: w * 0.0, y: w * 0.7))
-                path.closeSubpath()
-            }
-            .fill(color)
-            
-            // Eye
-            Circle()
-                .fill(Color.white)
-                .frame(width: size * 0.12, height: size * 0.12)
-                .offset(x: size * 0.2, y: -size * 0.02)
-            
-            Circle()
-                .fill(AppColors.textPrimary)
-                .frame(width: size * 0.06, height: size * 0.06)
-                .offset(x: size * 0.21, y: -size * 0.02)
-        }
-        .frame(width: size, height: size)
-    }
-}
-
-// MARK: - Stats Icon
-struct StatsIcon: View {
-    var size: CGFloat = 24
-    var color: Color = AppColors.textPrimary
-    
-    var body: some View {
-        ZStack {
-            // Line chart
-            Path { path in
-                let w = size
-                path.move(to: CGPoint(x: w * 0.1, y: w * 0.7))
-                path.addLine(to: CGPoint(x: w * 0.35, y: w * 0.4))
-                path.addLine(to: CGPoint(x: w * 0.55, y: w * 0.55))
-                path.addLine(to: CGPoint(x: w * 0.9, y: w * 0.2))
-            }
-            .stroke(color, style: StrokeStyle(lineWidth: size * 0.08, lineCap: .round, lineJoin: .round))
-            
-            // Dots
-            Circle()
-                .fill(color)
-                .frame(width: size * 0.12, height: size * 0.12)
-                .offset(x: -size * 0.15, y: size * 0.1)
-            
-            Circle()
-                .fill(color)
-                .frame(width: size * 0.12, height: size * 0.12)
-                .offset(x: size * 0.05, y: size * 0.05)
-            
-            Circle()
-                .fill(color)
-                .frame(width: size * 0.12, height: size * 0.12)
-                .offset(x: size * 0.4, y: -size * 0.3)
-        }
-        .frame(width: size, height: size)
-    }
-}
-
-// MARK: - Home Icon
-struct HomeIcon: View {
-    var size: CGFloat = 24
-    var color: Color = AppColors.textPrimary
-    
-    var body: some View {
-        ZStack {
-            // Roof
-            Path { path in
-                let w = size
-                path.move(to: CGPoint(x: w * 0.5, y: w * 0.1))
-                path.addLine(to: CGPoint(x: w * 0.1, y: w * 0.45))
-                path.addLine(to: CGPoint(x: w * 0.9, y: w * 0.45))
-                path.closeSubpath()
-            }
-            .fill(color)
-            
-            // Body
-            Rectangle()
-                .fill(color)
-                .frame(width: size * 0.55, height: size * 0.42)
-                .offset(y: size * 0.22)
-            
-            // Door
-            Rectangle()
-                .fill(Color.white)
-                .frame(width: size * 0.18, height: size * 0.25)
-                .offset(y: size * 0.3)
-        }
-        .frame(width: size, height: size)
+struct DepthArrowShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        var p = Path()
+        let w = rect.width
+        let h = rect.height
+        // Downward arrow
+        p.move(to: CGPoint(x: w * 0.5, y: h * 0.1))
+        p.addLine(to: CGPoint(x: w * 0.5, y: h * 0.7))
+        p.addLine(to: CGPoint(x: w * 0.25, y: h * 0.55))
+        p.move(to: CGPoint(x: w * 0.5, y: h * 0.7))
+        p.addLine(to: CGPoint(x: w * 0.75, y: h * 0.55))
+        // Waves at bottom
+        p.move(to: CGPoint(x: w * 0.15, y: h * 0.85))
+        p.addQuadCurve(to: CGPoint(x: w * 0.5, y: h * 0.85),
+                        control: CGPoint(x: w * 0.33, y: h * 0.75))
+        p.addQuadCurve(to: CGPoint(x: w * 0.85, y: h * 0.85),
+                        control: CGPoint(x: w * 0.67, y: h * 0.95))
+        return p
     }
 }

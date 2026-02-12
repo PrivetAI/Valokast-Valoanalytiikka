@@ -1,48 +1,51 @@
 import Foundation
 
-struct FishingRecord: Identifiable, Codable {
-    let id: UUID
+// MARK: - Light Journal Entry
+
+struct LightJournalEntry: Identifiable, Codable {
+    var id: UUID
     var date: Date
-    var weather: WeatherCondition
-    var timesOfDay: [TimeOfDay]
-    var catchRating: Int // 0-10
-    var fishTypeIds: [UUID]
-    var biteCount: Int
-    var caughtCount: Int
-    
+    var latitude: Double
+    var iceThicknessInches: Double
+    var snowCoverInches: Double
+    var waterClarity: IceCondition.WaterClarity
+    var depthFishedFeet: Double
+    var speciesTargeted: String
+    var speciesCaught: [String]
+    var catchCount: Int
+    var estimatedLux: Double
+    var timeOfDay: String // "Dawn", "Morning", "Midday", "Afternoon", "Dusk", "Night"
+    var notes: String
+
     init(
         id: UUID = UUID(),
         date: Date = Date(),
-        weather: WeatherCondition = .clear,
-        timesOfDay: [TimeOfDay] = [],
-        catchRating: Int = 5,
-        fishTypeIds: [UUID] = [],
-        biteCount: Int = 0,
-        caughtCount: Int = 0
+        latitude: Double = 45.0,
+        iceThicknessInches: Double = 12,
+        snowCoverInches: Double = 2,
+        waterClarity: IceCondition.WaterClarity = .clear,
+        depthFishedFeet: Double = 15,
+        speciesTargeted: String = "walleye",
+        speciesCaught: [String] = [],
+        catchCount: Int = 0,
+        estimatedLux: Double = 0,
+        timeOfDay: String = "Morning",
+        notes: String = ""
     ) {
         self.id = id
         self.date = date
-        self.weather = weather
-        self.timesOfDay = timesOfDay
-        self.catchRating = catchRating
-        self.fishTypeIds = fishTypeIds
-        self.biteCount = biteCount
-        self.caughtCount = caughtCount
+        self.latitude = latitude
+        self.iceThicknessInches = iceThicknessInches
+        self.snowCoverInches = snowCoverInches
+        self.waterClarity = waterClarity
+        self.depthFishedFeet = depthFishedFeet
+        self.speciesTargeted = speciesTargeted
+        self.speciesCaught = speciesCaught
+        self.catchCount = catchCount
+        self.estimatedLux = estimatedLux
+        self.timeOfDay = timeOfDay
+        self.notes = notes
     }
-    
-    var ratingCategory: RatingCategory {
-        if catchRating >= 8 {
-            return .excellent
-        } else if catchRating >= 4 {
-            return .average
-        } else {
-            return .poor
-        }
-    }
-    
-    enum RatingCategory {
-        case excellent
-        case average
-        case poor
-    }
+
+    static let timeOptions = ["Dawn", "Morning", "Midday", "Afternoon", "Dusk", "Night"]
 }

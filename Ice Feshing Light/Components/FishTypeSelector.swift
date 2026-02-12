@@ -1,60 +1,38 @@
 import SwiftUI
 
-struct FishTypeChip: View {
-    let fish: FishType
-    let isSelected: Bool
-    let action: () -> Void
-    
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: AppSpacing.xs) {
-                if isSelected {
-                    Circle()
-                        .fill(Color.white)
-                        .frame(width: 8, height: 8)
-                }
-                
-                Text(fish.name)
-                    .font(AppTypography.callout)
-                    .foregroundColor(isSelected ? .white : AppColors.textPrimary)
-            }
-            .padding(.horizontal, AppSpacing.md)
-            .padding(.vertical, AppSpacing.sm)
-            .background(
-                RoundedRectangle(cornerRadius: AppCorners.xl)
-                    .fill(isSelected ? AppColors.primary : AppColors.surface)
-            )
-        }
-        .buttonStyle(PlainButtonStyle())
-    }
-}
+// MARK: - Species Selector
 
-struct FishTypeSelector: View {
-    let fishTypes: [FishType]
-    @Binding var selectedIds: [UUID]
-    
-    private let columns = [
-        GridItem(.adaptive(minimum: 90), spacing: AppSpacing.sm)
-    ]
-    
+struct SpeciesSelector: View {
+    @Binding var selectedID: String
+    let species: [FishSpecies]
+
     var body: some View {
-        LazyVGrid(columns: columns, spacing: AppSpacing.sm) {
-            ForEach(fishTypes) { fish in
-                FishTypeChip(
-                    fish: fish,
-                    isSelected: selectedIds.contains(fish.id)
-                ) {
-                    toggleFish(fish.id)
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(species) { sp in
+                    Button(action: { selectedID = sp.id }) {
+                        VStack(spacing: 4) {
+                            FishShape()
+                                .fill(selectedID == sp.id ? AppTheme.amber : AppTheme.dimText)
+                                .frame(width: 28, height: 18)
+                            Text(sp.name)
+                                .font(.caption2)
+                                .fontWeight(selectedID == sp.id ? .bold : .regular)
+                                .foregroundColor(selectedID == sp.id ? AppTheme.amber : AppTheme.bodyText)
+                                .lineLimit(1)
+                        }
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 8)
+                        .background(selectedID == sp.id ? AppTheme.amber.opacity(0.12) : AppTheme.backgroundSecondary)
+                        .cornerRadius(10)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 10)
+                                .stroke(selectedID == sp.id ? AppTheme.amber.opacity(0.5) : Color.clear, lineWidth: 1)
+                        )
+                    }
                 }
             }
-        }
-    }
-    
-    private func toggleFish(_ id: UUID) {
-        if selectedIds.contains(id) {
-            selectedIds.removeAll { $0 == id }
-        } else {
-            selectedIds.append(id)
+            .padding(.horizontal, 4)
         }
     }
 }

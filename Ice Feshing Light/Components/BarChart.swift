@@ -1,90 +1,50 @@
 import SwiftUI
 
-struct BarChartData: Identifiable {
-    let id = UUID()
-    let label: String
-    let value: Double
-    let color: Color
-}
+// MARK: - Time Window Bar Chart
 
-struct BarChart: View {
-    let data: [BarChartData]
-    var maxValue: Double = 10
-    var showLabels: Bool = true
-    var showValues: Bool = true
-    
-    var body: some View {
-        GeometryReader { geometry in
-            let barWidth = (geometry.size.width - CGFloat(data.count - 1) * 12) / CGFloat(data.count)
-            let maxHeight = geometry.size.height - (showLabels ? 40 : 0) - (showValues ? 25 : 0)
-            
-            HStack(alignment: .bottom, spacing: 12) {
-                ForEach(data) { item in
-                    VStack(spacing: 4) {
-                        if showValues {
-                            Text(String(format: "%.1f", item.value))
-                                .font(AppTypography.caption)
-                                .foregroundColor(AppColors.textSecondary)
-                        }
-                        
-                        RoundedRectangle(cornerRadius: AppCorners.small)
-                            .fill(item.color)
-                            .frame(
-                                width: barWidth,
-                                height: max(4, CGFloat(item.value / maxValue) * maxHeight)
-                            )
-                        
-                        if showLabels {
-                            Text(item.label)
-                                .font(AppTypography.caption)
-                                .foregroundColor(AppColors.textSecondary)
-                                .lineLimit(1)
-                                .minimumScaleFactor(0.7)
-                        }
-                    }
-                }
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
-        }
-        .frame(height: 180)
+struct TimeWindowBarChart: View {
+    let windows: [(label: String, score: Double)] // score 0-100
+    let accentColor: Color
+
+    init(windows: [(label: String, score: Double)], accentColor: Color = AppTheme.amber) {
+        self.windows = windows
+        self.accentColor = accentColor
     }
-}
 
-struct HorizontalBarChart: View {
-    let data: [BarChartData]
-    var maxValue: Double = 10
-    
     var body: some View {
-        VStack(spacing: AppSpacing.sm) {
-            ForEach(data) { item in
-                HStack(spacing: AppSpacing.sm) {
-                    Text(item.label)
-                        .font(AppTypography.callout)
-                        .foregroundColor(AppColors.textPrimary)
-                        .frame(width: 80, alignment: .leading)
-                    
-                    GeometryReader { geometry in
+        VStack(spacing: 6) {
+            ForEach(Array(windows.enumerated()), id: \.offset) { idx, window in
+                HStack(spacing: 8) {
+                    Text(window.label)
+                        .font(.caption)
+                        .foregroundColor(AppTheme.dimText)
+                        .frame(width: 60, alignment: .trailing)
+
+                    GeometryReader { geo in
                         ZStack(alignment: .leading) {
-                            RoundedRectangle(cornerRadius: 4)
-                                .fill(AppColors.surface)
-                                .frame(height: 24)
-                            
-                            RoundedRectangle(cornerRadius: 4)
-                                .fill(item.color)
-                                .frame(
-                                    width: max(4, CGFloat(item.value / maxValue) * geometry.size.width),
-                                    height: 24
-                                )
+                            Capsule()
+                                .fill(AppTheme.backgroundSecondary)
+                                .frame(height: 14)
+                            Capsule()
+                                .fill(barColor(score: window.score))
+                                .frame(width: geo.size.width * CGFloat(window.score / 100), height: 14)
                         }
                     }
-                    .frame(height: 24)
-                    
-                    Text(String(format: "%.1f", item.value))
-                        .font(AppTypography.callout)
-                        .foregroundColor(AppColors.textSecondary)
-                        .frame(width: 40, alignment: .trailing)
+                    .frame(height: 14)
+
+                    Text(String(format: "%.0f%%", window.score))
+                        .font(.caption)
+                        .fontWeight(.medium)
+                        .foregroundColor(barColor(score: window.score))
+                        .frame(width: 36, alignment: .leading)
                 }
             }
         }
+    }
+
+    private func barColor(score: Double) -> Color {
+        if score >= 70 { return AppTheme.amberGlow }
+        if score >= 40 { return AppTheme.amber }
+        return AppTheme.lowLight
     }
 }
