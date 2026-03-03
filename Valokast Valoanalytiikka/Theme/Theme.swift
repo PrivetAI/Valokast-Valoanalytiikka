@@ -1,6 +1,6 @@
 import SwiftUI
 
-// MARK: - Ice Feshing Light Theme
+// MARK: - Valokast Valoanalytiikka Theme
 // Dark background with luminous yellow/amber accents
 
 struct AppTheme {

@@ -1,7 +1,7 @@
 import SwiftUI
 
 @main
-struct Ice_Feshing_LightApp: App {
+struct Valokast_ValoanalytiikkaApp: App {
     init() {
         // Force dark appearance globally
         if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
