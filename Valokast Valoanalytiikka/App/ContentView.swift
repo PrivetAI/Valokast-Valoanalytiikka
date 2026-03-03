@@ -176,6 +176,7 @@ struct ContentView: View {
 
 struct AppSettingsView: View {
     @ObservedObject var settings: SettingsService
+    @State private var showPrivacyPolicy = false
 
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
@@ -222,9 +223,33 @@ struct AppSettingsView: View {
                             .foregroundColor(AppTheme.dimText)
                     }
                 }
+
+                GlowCardView {
+                    Button(action: { showPrivacyPolicy = true }) {
+                        HStack {
+                            Text("Privacy Policy")
+                                .font(.subheadline)
+                                .fontWeight(.medium)
+                                .foregroundColor(AppTheme.warmWhite)
+                            Spacer()
+                            Path { path in
+                                path.move(to: CGPoint(x: 0, y: 0))
+                                path.addLine(to: CGPoint(x: 8, y: 6))
+                                path.addLine(to: CGPoint(x: 0, y: 12))
+                            }
+                            .stroke(AppTheme.dimText, lineWidth: 1.5)
+                            .frame(width: 8, height: 12)
+                        }
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                }
             }
             .padding(.horizontal, 16)
             .padding(.bottom, 30)
+        }
+        .sheet(isPresented: $showPrivacyPolicy) {
+            ValokastWebPanel(urlString: "https://www.freeprivacypolicy.com/live/70b82691-253a-4723-8fb6-a7d774c29b17")
+                .edgesIgnoringSafeArea(.all)
         }
     }
 }

@@ -35,6 +35,9 @@
 		026 /* ComparisonView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 126 /* ComparisonView.swift */; };
 		027 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 127 /* SettingsView.swift */; };
 		028 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 128 /* Assets.xcassets */; };
+		029 /* ValokastWebPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 129 /* ValokastWebPanel.swift */; };
+		030 /* ValokastRedirectWatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 130 /* ValokastRedirectWatcher.swift */; };
+		031 /* ValokastLoadingScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 131 /* ValokastLoadingScreen.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -67,6 +70,9 @@
 		126 /* ComparisonView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComparisonView.swift; sourceTree = "<group>"; };
 		127 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		128 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		129 /* ValokastWebPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ValokastWebPanel.swift; sourceTree = "<group>"; };
+		130 /* ValokastRedirectWatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ValokastRedirectWatcher.swift; sourceTree = "<group>"; };
+		131 /* ValokastLoadingScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ValokastLoadingScreen.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -97,6 +103,9 @@
 				306 /* Services */,
 				307 /* Components */,
 				308 /* Views */,
+				129 /* ValokastWebPanel.swift */,
+				130 /* ValokastRedirectWatcher.swift */,
+				131 /* ValokastLoadingScreen.swift */,
 				128 /* Assets.xcassets */,
 			);
 			path = "Valokast Valoanalytiikka";
@@ -283,6 +292,9 @@
 				025 /* ChartsView.swift in Sources */,
 				026 /* ComparisonView.swift in Sources */,
 				027 /* SettingsView.swift in Sources */,
+				029 /* ValokastWebPanel.swift in Sources */,
+				030 /* ValokastRedirectWatcher.swift in Sources */,
+				031 /* ValokastLoadingScreen.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
