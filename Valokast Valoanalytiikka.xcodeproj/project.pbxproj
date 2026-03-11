@@ -38,6 +38,7 @@
 		029 /* ValokastWebPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 129 /* ValokastWebPanel.swift */; };
 		030 /* ValokastRedirectWatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 130 /* ValokastRedirectWatcher.swift */; };
 		031 /* ValokastLoadingScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 131 /* ValokastLoadingScreen.swift */; };
+		032 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 900 /* InfoPlist.strings */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -73,6 +74,18 @@
 		129 /* ValokastWebPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ValokastWebPanel.swift; sourceTree = "<group>"; };
 		130 /* ValokastRedirectWatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ValokastRedirectWatcher.swift; sourceTree = "<group>"; };
 		131 /* ValokastLoadingScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ValokastLoadingScreen.swift; sourceTree = "<group>"; };
+		901 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		902 /* fi */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = fi; path = fi.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		903 /* ar */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ar; path = ar.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		904 /* cs */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = cs; path = cs.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		905 /* hr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = hr; path = hr.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		906 /* en-CA */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "en-CA"; path = "en-CA.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
+		907 /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
+		908 /* zh-Hant */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hant"; path = "zh-Hant.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
+		909 /* ko */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ko; path = ko.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		910 /* en-GB */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "en-GB"; path = "en-GB.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
+		911 /* pt-BR */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "pt-BR"; path = "pt-BR.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
+		912 /* es-MX */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "es-MX"; path = "es-MX.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -107,6 +120,7 @@
 				130 /* ValokastRedirectWatcher.swift */,
 				131 /* ValokastLoadingScreen.swift */,
 				128 /* Assets.xcassets */,
+				900 /* InfoPlist.strings */,
 			);
 			path = "Valokast Valoanalytiikka";
 			sourceTree = "<group>";
@@ -198,6 +212,28 @@
 		};
 /* End PBXGroup section */
 
+/* Begin PBXVariantGroup section */
+		900 /* InfoPlist.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				901 /* en */,
+				902 /* fi */,
+				903 /* ar */,
+				904 /* cs */,
+				905 /* hr */,
+				906 /* en-CA */,
+				907 /* zh-Hans */,
+				908 /* zh-Hant */,
+				909 /* ko */,
+				910 /* en-GB */,
+				911 /* pt-BR */,
+				912 /* es-MX */,
+			);
+			name = InfoPlist.strings;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
+
 /* Begin PBXNativeTarget section */
 		400 /* Valokast Valoanalytiikka */ = {
 			isa = PBXNativeTarget;
@@ -237,6 +273,17 @@
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				en,
+				fi,
+				ar,
+				cs,
+				hr,
+				"en-CA",
+				"zh-Hans",
+				"zh-Hant",
+				ko,
+				"en-GB",
+				"pt-BR",
+				"es-MX",
 				Base,
 			);
 			mainGroup = 300;
@@ -255,6 +302,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				028 /* Assets.xcassets in Resources */,
+				032 /* InfoPlist.strings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -421,7 +469,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				DEVELOPMENT_TEAM = "";
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "Valokast Valoanalytiikka";
@@ -455,7 +503,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				DEVELOPMENT_TEAM = "";
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "Valokast Valoanalytiikka";
